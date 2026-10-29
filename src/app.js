@@ -102,7 +102,7 @@ export function createApp(options = {}) {
       return res.status(503).json({ error: "auth_not_configured", message: "API access is disabled until API_TOKENS is configured." });
     }
     const authorization = req.get("authorization") ?? "";
-    const match = /^Bearer\\s+(.+)$/i.exec(authorization);
+    const match = /^Bearer\s+(.+)$/i.exec(authorization);
     if (!match || !tokenMatches(match[1], tokens)) {
       return res.status(401).json({ error: "unauthorized" });
     }
