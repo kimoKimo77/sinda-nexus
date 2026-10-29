@@ -59,7 +59,6 @@ export function createApp(options = {}) {
 
   app.disable("x-powered-by");
   app.use(helmet());
-  app.use(express.json({ limit: "100kb", strict: true }));
   app.use(rateLimit({
     windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
     limit: Number(process.env.RATE_LIMIT_MAX) || 100,
@@ -82,6 +81,7 @@ export function createApp(options = {}) {
     }
     return next();
   });
+  app.use("/api", express.json({ limit: "100kb", strict: true }));
 
   app.get("/api/projects", (_req, res) => {
     res.json({ data: [...projects.values()] });
