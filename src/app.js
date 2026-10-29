@@ -1,0 +1,71 @@
+import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { randomUUID } from "node:crypto";
+
+export function createApp() {
+  const app = express();
+  const projects = new Map();
+
+  app.disable("x-powered-by");
+  app.use(helmet());
+  app.use(express.json({ limit: "100kb", strict: true }));
+  app.use(rateLimit({
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
+    limit: Number(process.env.RATE_LIMIT_MAX) || 100,
+    standardHeaders: "draft-8",
+    legacyHeaders: false
+  }));
+
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
+  app.get("/api/projects", (_req, res) => {
+    res.json({ data: [...projects.values()] });
+  });
+
+  app.post("/api/projects", (req, res) => {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
+
+    if (!name || name.length > 120 || description.length > 2000) {
+      return res.status(400).json({ error: "invalid_project", message: "A name (1-120 chars) and description (up to 2000 chars) are required." });
+    }
+
+    const project = {
+      id: randomUUID(),
+      name,
+      description,
+      createdAt: new Date().toISOString()
+    };
+    projects.set(project.id, project);
+    return res.status(201).json({ data: project });
+  });
+
+  app.get("/api/projects/:id", (req, res) => {
+    const project = projects.get(req.params.id);
+    if (!project) return res.status(404).json({ error: "not_found" });
+    return res.json({ data: project });
+  });
+
+  app.get("/api/reports/summary", (_req, res) => {
+    res.json({
+      data: {
+        projectCount: projects.size,
+        generatedAt: new Date().toISOString(),
+        note: "Summary covers in-memory project records for this process only."
+      }
+    });
+  });
+
+  app.use((err, _req, res, _next) => {
+    if (res.headersSent) return;
+    if (err instanceof SyntaxError && "body" in err) {
+      return res.status(400).json({ error: "invalid_json" });
+    }
+    return res.status(500).json({ error: "internal_server_error" });
+  });
+
+  return app;
+}
