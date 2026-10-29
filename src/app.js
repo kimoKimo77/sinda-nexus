@@ -2,7 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 function parseTokens(value) {
@@ -24,7 +24,8 @@ export function createApp(options = {}) {
   const tokens = parseTokens(options.apiTokens ?? process.env.API_TOKENS);
   const storageFileValue = options.dataFile ?? process.env.DATA_FILE ?? "./data/projects.json";
   const storageFile = storageFileValue === ":memory:" ? null : resolve(storageFileValue);
-  const maxProjects = Number(options.maxProjects ?? process.env.MAX_PROJECTS) || 1000;
+  const maxProjectsValue = options.maxProjects ?? process.env.MAX_PROJECTS;
+  const maxProjects = maxProjectsValue === undefined || maxProjectsValue === "" ? 1000 : Number(maxProjectsValue);
 
   if (!Number.isInteger(maxProjects) || maxProjects < 1 || maxProjects > 100_000) {
     throw new Error("MAX_PROJECTS must be an integer between 1 and 100000");
@@ -47,8 +48,13 @@ export function createApp(options = {}) {
   function persistProjects() {
     if (!storageFile) return;
     const temporaryFile = `${storageFile}.${process.pid}.${randomUUID()}.tmp`;
-    writeFileSync(temporaryFile, JSON.stringify([...projects.values()], null, 2), { encoding: "utf8", mode: 0o600 });
-    renameSync(temporaryFile, storageFile);
+    try {
+      writeFileSync(temporaryFile, JSON.stringify([...projects.values()], null, 2), { encoding: "utf8", mode: 0o600 });
+      renameSync(temporaryFile, storageFile);
+    } catch (error) {
+      try { unlinkSync(temporaryFile); } catch { /* no temporary file to clean up */ }
+      throw error;
+    }
   }
 
   app.disable("x-powered-by");
