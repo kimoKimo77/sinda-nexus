@@ -32,6 +32,10 @@ test("API rejects missing and invalid bearer tokens", async () => {
   const app = makeApp();
   assert.equal((await request(app).get("/api/projects")).status, 401);
   assert.equal((await request(app).get("/api/projects").set("Authorization", "Bearer wrong")).status, 401);
+  const malformedUnauthenticated = await request(app).post("/api/projects")
+    .set("Content-Type", "application/json")
+    .send('{"name":');
+  assert.equal(malformedUnauthenticated.status, 401);
 });
 
 test("authenticated project can be created, listed, and retrieved", async () => {
