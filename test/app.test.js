@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import request from "supertest";
@@ -13,6 +13,8 @@ const auth = (requestBuilder) => requestBuilder.set("Authorization", `Bearer ${T
 test("invalid project capacity configuration is rejected", () => {
   assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", maxProjects: 0 }), /MAX_PROJECTS/);
   assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", maxProjects: 100001 }), /MAX_PROJECTS/);
+  assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", rateLimitWindowMs: 0 }), /RATE_LIMIT_WINDOW_MS/);
+  assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", rateLimitMax: -1 }), /RATE_LIMIT_MAX/);
 });
 
 test("health endpoint remains available without API authentication", async () => {
@@ -104,4 +106,35 @@ test("projects persist across app instances when a data file is configured", asy
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+
+test("persisted project data rejects duplicate IDs and invalid timestamps", () => {
+  const directory = mkdtempSync(join(tmpdir(), "sinda-nexus-invalid-data-"));
+  const dataFile = join(directory, "projects.json");
+  const project = { id: "duplicate-id", name: "Example", description: "", createdAt: "2026-01-01T00:00:00.000Z" };
+  try {
+    writeFileSync(dataFile, JSON.stringify([project, { ...project, name: "Duplicate" }]));
+    assert.throws(
+      () => createApp({ apiTokens: [TOKEN], dataFile }),
+      /valid project array with unique IDs/
+    );
+
+    writeFileSync(dataFile, JSON.stringify([{ ...project, id: "unique-id", createdAt: "not-a-date" }]));
+    assert.throws(
+      () => createApp({ apiTokens: [TOKEN], dataFile }),
+      /valid project array with unique IDs/
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("summary endpoint requires authentication and reports the project count", async () => {
+  const app = makeApp();
+  assert.equal((await request(app).get("/api/reports/summary")).status, 401);
+  const response = await auth(request(app).get("/api/reports/summary"));
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.projectCount, 0);
+  assert.ok(Number.isFinite(Date.parse(response.body.data.generatedAt)));
 });
