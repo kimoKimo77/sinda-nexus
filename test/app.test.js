@@ -10,6 +10,11 @@ const TOKEN = "test-only-token";
 const makeApp = (options = {}) => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", ...options });
 const auth = (requestBuilder) => requestBuilder.set("Authorization", `Bearer ${TOKEN}`);
 
+test("invalid project capacity configuration is rejected", () => {
+  assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", maxProjects: 0 }), /MAX_PROJECTS/);
+  assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", maxProjects: 100001 }), /MAX_PROJECTS/);
+});
+
 test("health endpoint remains available without API authentication", async () => {
   const response = await request(makeApp()).get("/health");
   assert.equal(response.status, 200);
