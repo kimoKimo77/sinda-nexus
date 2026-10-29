@@ -18,6 +18,14 @@ function tokenMatches(candidate, tokens) {
   });
 }
 
+function positiveInteger(value, fallback, name, maximum = Number.MAX_SAFE_INTEGER) {
+  const parsed = value === undefined || value === "" ? fallback : Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) {
+    throw new Error(`${name} must be an integer between 1 and ${maximum}`);
+  }
+  return parsed;
+}
+
 export function createApp(options = {}) {
   const app = express();
   const projects = new Map();
@@ -26,6 +34,18 @@ export function createApp(options = {}) {
   const storageFile = storageFileValue === ":memory:" ? null : resolve(storageFileValue);
   const maxProjectsValue = options.maxProjects ?? process.env.MAX_PROJECTS;
   const maxProjects = maxProjectsValue === undefined || maxProjectsValue === "" ? 1000 : Number(maxProjectsValue);
+  const rateLimitWindowMs = positiveInteger(
+    options.rateLimitWindowMs ?? process.env.RATE_LIMIT_WINDOW_MS,
+    60_000,
+    "RATE_LIMIT_WINDOW_MS",
+    2_147_483_647
+  );
+  const rateLimitMax = positiveInteger(
+    options.rateLimitMax ?? process.env.RATE_LIMIT_MAX,
+    100,
+    "RATE_LIMIT_MAX",
+    1_000_000
+  );
 
   if (!Number.isInteger(maxProjects) || maxProjects < 1 || maxProjects > 100_000) {
     throw new Error("MAX_PROJECTS must be an integer between 1 and 100000");
@@ -35,11 +55,18 @@ export function createApp(options = {}) {
     mkdirSync(dirname(storageFile), { recursive: true, mode: 0o700 });
     if (existsSync(storageFile)) {
       const parsed = JSON.parse(readFileSync(storageFile, "utf8"));
-      if (!Array.isArray(parsed) || parsed.length > maxProjects || parsed.some((item) =>
-        !item || typeof item.id !== "string" || typeof item.name !== "string" ||
-        typeof item.description !== "string" || typeof item.createdAt !== "string"
-      )) {
-        throw new Error("DATA_FILE must contain a valid project array within MAX_PROJECTS");
+      const seenIds = new Set();
+      if (!Array.isArray(parsed) || parsed.length > maxProjects || parsed.some((item) => {
+        if (!item || typeof item.id !== "string" || !item.id.trim() ||
+          typeof item.name !== "string" || typeof item.description !== "string" ||
+          typeof item.createdAt !== "string" || !Number.isFinite(Date.parse(item.createdAt)) ||
+          seenIds.has(item.id)) {
+          return true;
+        }
+        seenIds.add(item.id);
+        return false;
+      })) {
+        throw new Error("DATA_FILE must contain a valid project array with unique IDs within MAX_PROJECTS");
       }
       for (const project of parsed) projects.set(project.id, project);
     }
@@ -60,8 +87,8 @@ export function createApp(options = {}) {
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(rateLimit({
-    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
-    limit: Number(process.env.RATE_LIMIT_MAX) || 100,
+    windowMs: rateLimitWindowMs,
+    limit: rateLimitMax,
     standardHeaders: "draft-8",
     legacyHeaders: false
   }));
@@ -75,7 +102,7 @@ export function createApp(options = {}) {
       return res.status(503).json({ error: "auth_not_configured", message: "API access is disabled until API_TOKENS is configured." });
     }
     const authorization = req.get("authorization") ?? "";
-    const match = /^Bearer\s+(.+)$/i.exec(authorization);
+    const match = /^Bearer\\s+(.+)$/i.exec(authorization);
     if (!match || !tokenMatches(match[1], tokens)) {
       return res.status(401).json({ error: "unauthorized" });
     }
