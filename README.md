@@ -29,12 +29,11 @@
 
 ## بدء التطوير
 
-سيُضاف دليل تشغيل دقيق بعد تحديد البنية البرمجية الفعلية وإضافة ملفات التطبيق والاعتماديات والاختبارات.
+يتطلب التشغيل Node.js 20 أو أحدث. استخدم `npm install` ثم `npm run check` لتشغيل الفحوص والاختبارات المحلية.
 
 ## الترخيص
 
 لم يُحدَّد الترخيص بعد. لا تُفترض أذونات إعادة الاستخدام أو التوزيع قبل اختيار ترخيص مناسب.
-
 
 ## Web3 State Validation API (preview)
 
@@ -57,3 +56,7 @@ curl -X POST http://127.0.0.1:3000/api/web3/validate \
 ```
 
 A `valid` result means the RPC provider reported a matching chain, transaction and successful receipt at check time. Confirmations/finality are not calculated. Provider errors, pending transactions, and unavailable data return `unverified`. Bitcoin transaction validation is not included in this iteration. No wallet connection, signing, or transaction submission occurs.
+
+### Live RPC verification (read-only)
+
+Run `npm run rpc:live` to contact public JSON-RPC endpoints (or override them with the three RPC environment variables) and verify each network's reported chain ID and latest block number. The GitHub Actions workflow runs this smoke test separately from the mocked unit tests. This confirms live endpoint connectivity and network identity at test time; it does not validate a user-supplied transaction, establish finality, or guarantee provider availability. The check uses only `eth_chainId` and `eth_blockNumber`; it never connects a wallet or submits a transaction.
