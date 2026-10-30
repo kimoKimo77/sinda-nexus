@@ -11,6 +11,15 @@ test("health endpoint returns ok", async () => {
   assert.equal(response.body.status, "ok");
 });
 
+test("wallet preview frontend is served", async () => {
+  const page = await request(app).get("/");
+  assert.equal(page.status, 200);
+  assert.match(page.text, /بوابة المعاملات الآمنة/);
+  const module = await request(app).get("/wallet-modules/wallet.js");
+  assert.equal(module.status, 200);
+  assert.match(module.text, /sendWithMetaMask/);
+});
+
 test("project can be created and listed", async () => {
   const created = await request(app)
     .post("/api/projects")
