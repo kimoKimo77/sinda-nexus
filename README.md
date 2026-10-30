@@ -46,7 +46,7 @@ npm start
 
 ## API للتحقق من حالة المعاملة (قراءة فقط)
 
-يوفر `POST /api/web3/validate` التحقق من hash عبر RPC مضبوط على الخادم، و`POST /api/web3/hash` بصمة SHA-256. الشبكات المدعومة في API: Ethereum Mainnet (1)، BNB Smart Chain (56)، Polygon (137). إعدادات RPC هي `ETHEREUM_RPC_URL` و`BSC_RPC_URL` و`POLYGON_RPC_URL`. في وضع الإنتاج يتطلب التحقق `WEB3_VALIDATION_API_KEY`.
+يوفر `POST /api/web3/validate` التحقق من hash وReceipt عبر RPC مضبوط على الخادم، ويحسب عدد التأكيدات من `eth_blockNumber`. الشبكات المدعومة: Ethereum Mainnet (1)، BNB Smart Chain (56)، Polygon (137)، Sepolia (11155111)، BNB Testnet (97)، وPolygon Amoy (80002). متغيرات RPC هي `ETHEREUM_RPC_URL` و`BSC_RPC_URL` و`POLYGON_RPC_URL` و`ETHEREUM_SEPOLIA_RPC_URL` و`BSC_TESTNET_RPC_URL` و`POLYGON_AMOY_RPC_URL`. نقطة التحقق للقراءة فقط ومحددة بـ20 طلبًا في الدقيقة لكل عنوان IP بالإضافة إلى المحدد العام. نقطة `POST /api/web3/hash` محمية اختياريًا بـ`WEB3_VALIDATION_API_KEY`، وتكون مطلوبة في الإنتاج.
 
 تشغيل `npm run rpc:live` ينفذ فقط `eth_chainId` و`eth_blockNumber` ولا يرسل معاملات.
 
