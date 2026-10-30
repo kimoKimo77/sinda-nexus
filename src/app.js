@@ -5,8 +5,14 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { validateEvmTransaction, validatePayloadHash } from "./web3/validation.js";
+import { AlchemyPricesError, createAlchemyPricesService } from "./prices/alchemy.js";
 
-export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env, apiKey = process.env.WEB3_VALIDATION_API_KEY } = {}) {
+export function createApp({
+  fetchImpl = globalThis.fetch,
+  rpcUrls = process.env,
+  apiKey = process.env.WEB3_VALIDATION_API_KEY,
+  pricesService = createAlchemyPricesService({ fetchImpl })
+} = {}) {
   const app = express();
   const projects = new Map();
   app.disable("x-powered-by");
@@ -26,7 +32,7 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
       return res.status(503).json({ error: "web3_validation_not_configured" });
     }
     if (!apiKey) return next();
-    const supplied = req.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const supplied = req.get("authorization")?.replace(/^Bearer\\s+/i, "") ?? "";
     const expectedBuffer = Buffer.from(apiKey);
     const suppliedBuffer = Buffer.from(supplied);
     if (expectedBuffer.length !== suppliedBuffer.length || !timingSafeEqual(expectedBuffer, suppliedBuffer)) {
@@ -34,6 +40,23 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
     }
     return next();
   };
+
+  app.get("/api/prices/by-symbol", async (req, res, next) => {
+    try {
+      const symbols = typeof req.query.symbols === "string" ? req.query.symbols.split(",") : [];
+      return res.json({ data: await pricesService.bySymbol(symbols) });
+    } catch (error) { return next(error); }
+  });
+  app.post("/api/prices/by-address", async (req, res, next) => {
+    try {
+      return res.json({ data: await pricesService.byAddress(req.body?.addresses) });
+    } catch (error) { return next(error); }
+  });
+  app.post("/api/prices/historical", async (req, res, next) => {
+    try {
+      return res.json({ data: await pricesService.historical(req.body ?? {}) });
+    } catch (error) { return next(error); }
+  });
 
   app.post("/api/web3/validate", rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }), async (req, res) => {
     const { network, transactionHash } = req.body ?? {};
@@ -74,6 +97,9 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
     if (res.headersSent) return;
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "payload_too_large" });
     if (err instanceof SyntaxError && "body" in err) return res.status(400).json({ error: "invalid_json" });
+    if (err instanceof AlchemyPricesError) {
+      return res.status(err.status).json({ error: err.code });
+    }
     return res.status(500).json({ error: "internal_server_error" });
   });
   return app;
