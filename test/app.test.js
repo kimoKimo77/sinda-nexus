@@ -73,10 +73,19 @@ test("project creation rejects invalid fields and enforces configured capacity",
 
 test("API rate limit returns a stable 429 response", async () => {
   const app = makeApp({ rateLimitMax: 1 });
-  assert.equal((await auth(request(app).get("/api/projects")).then((response) => response.status)), 200);
+  const first = await auth(request(app).get("/api/projects"));
+  assert.equal(first.status, 200);
   const limited = await auth(request(app).get("/api/projects"));
   assert.equal(limited.status, 429);
   assert.equal(limited.body.error, "rate_limit_exceeded");
+});
+
+test("failed authentication attempts are rate limited too", async () => {
+  const app = makeApp({ rateLimitMax: 1 });
+  const first = await request(app).get("/api/projects").set("Authorization", "Bearer wrong");
+  assert.equal(first.status, 401);
+  const second = await request(app).get("/api/projects").set("Authorization", "Bearer wrong");
+  assert.equal(second.status, 429);
 });
 
 test("unknown routes and projects return 404", async () => {
