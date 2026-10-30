@@ -1,5 +1,6 @@
 name: CI
 
+# Push CI validates isolated fix branches before their review PR is retargeted.
 on:
   push:
     branches: ["feat/**", "fix/**"]
