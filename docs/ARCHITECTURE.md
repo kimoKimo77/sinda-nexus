@@ -21,8 +21,8 @@
 2. JSON-file persistence is for a single process and low-volume preview only. It does not provide transactional or multi-instance guarantees, database migrations, backups, or crash-safe durability guarantees.
 3. The in-memory rate-limit store is per process. Multi-instance deployments need a shared store and trusted proxy configuration.
 4. No durable/tamper-evident audit ledger, file-upload pipeline, or fine-grained authorization is implemented.
-5. No `package-lock.json` has been generated or validated in this environment. Reproducible dependency installation remains incomplete until a real lockfile is generated and committed; do not fabricate one.
-6. GitHub Actions and vulnerability-audit results must be checked after this branch is pushed. Adding a workflow does not prove it passed.
-7. Hosting configuration, TLS/reverse proxy, secrets storage, backups, and production deployment have not been verified.
+5. A v3 `package-lock.json` matching the current `package.json` manifest is committed. GitHub Actions run #95 verified `npm ci`, syntax checks, automated tests, and `npm audit --audit-level=high` on Node.js 20 and 22.
+6. The passing CI run validates the current commit's locked install, tests, and high-severity dependency audit. It does not replace a broader application security review or VPS smoke test.
+7. Preview deployment assets are being prepared for Docker Compose and Caddy on Hostinger VPS. VPS access, domain/DNS, TLS issuance, server firewall, secret provisioning, backups, and live smoke tests remain unverified; no deployment has occurred.
 
 Use only synthetic test data. Do not expose this preview API publicly or use it for confidential, financial, or customer records. No merge, real financial integration, or deployment is included or authorized by this branch.
