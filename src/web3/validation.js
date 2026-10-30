@@ -28,7 +28,7 @@ export function validatePayloadHash(payload) {
 }
 
 export async function validateEvmTransaction({ network, transactionHash, rpcUrls = process.env, fetchImpl = globalThis.fetch }) {
-  const config = NETWORKS[network];
+  const config = typeof network === "string" && Object.hasOwn(NETWORKS, network) ? NETWORKS[network] : null;
   if (!config) return { status: "invalid", reason: "unsupported_network", network };
   if (typeof transactionHash !== "string" || !HASH_PATTERN.test(transactionHash)) {
     return { status: "invalid", reason: "invalid_transaction_hash", network };
