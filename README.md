@@ -4,7 +4,7 @@
 
 ## بدء التشغيل
 
-يتطلب Node.js 20 أو أحدث:
+يتطلب Node.js 22 أو أحدث (ويُستخدم Node.js 24 في CI):
 
 ```bash
 npm install
@@ -46,7 +46,7 @@ npm start
 
 ## API للتحقق من حالة المعاملة (قراءة فقط)
 
-يوفر `POST /api/web3/validate` التحقق من hash وReceipt عبر RPC مضبوط على الخادم، ويحسب عدد التأكيدات من `eth_blockNumber`. الشبكات المدعومة: Ethereum Mainnet (1)، BNB Smart Chain (56)، Polygon (137)، Sepolia (11155111)، BNB Testnet (97)، وPolygon Amoy (80002). متغيرات RPC هي `ETHEREUM_RPC_URL` و`BSC_RPC_URL` و`POLYGON_RPC_URL` و`ETHEREUM_SEPOLIA_RPC_URL` و`BSC_TESTNET_RPC_URL` و`POLYGON_AMOY_RPC_URL`. نقطة التحقق للقراءة فقط ومحددة بـ20 طلبًا في الدقيقة لكل عنوان IP بالإضافة إلى المحدد العام. نقطة `POST /api/web3/hash` محمية اختياريًا بـ`WEB3_VALIDATION_API_KEY`، وتكون مطلوبة في الإنتاج.
+يوفر `POST /api/web3/validate` التحقق من hash وReceipt عبر RPC مضبوط على الخادم، ويحسب عدد التأكيدات من `eth_blockNumber`. الحالة `valid` تعني أن Receipt ناجح وأن المعاملة مُدرجة في كتلة، ولا تعني تحقق نهائية الشبكة (Finality). يعيد المسار `finality: "not_assessed"` لأن عدد التأكيدات وحده لا يثبت نهائية الإجماع؛ تختلف سياسة النهائية باختلاف الشبكة وقد تتطلب قواعد/عتبات إضافية. الشبكات المدعومة: Ethereum Mainnet (1)، BNB Smart Chain (56)، Polygon (137)، Sepolia (11155111)، BNB Testnet (97)، وPolygon Amoy (80002). متغيرات RPC هي `ETHEREUM_RPC_URL` و`BSC_RPC_URL` و`POLYGON_RPC_URL` و`ETHEREUM_SEPOLIA_RPC_URL` و`BSC_TESTNET_RPC_URL` و`POLYGON_AMOY_RPC_URL`. نقطة التحقق للقراءة فقط ومحددة بـ20 طلبًا في الدقيقة لكل عنوان IP بالإضافة إلى المحدد العام. نقطة `POST /api/web3/hash` محمية اختياريًا بـ`WEB3_VALIDATION_API_KEY`، وتكون مطلوبة في الإنتاج.
 
 تشغيل `npm run rpc:live` ينفذ فقط `eth_chainId` و`eth_blockNumber` ولا يرسل معاملات.
 

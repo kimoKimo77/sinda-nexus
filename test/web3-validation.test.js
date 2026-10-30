@@ -43,6 +43,7 @@ test("marks successful Sepolia transactions valid and calculates confirmations",
   assert.equal(result.status, "valid");
   assert.equal(result.blockNumber, "0x10");
   assert.equal(result.confirmations, "4");
+  assert.equal(result.finality, "not_assessed");
 });
 test("marks reverted transactions invalid", async () => {
   const result = await validateEvmTransaction({ network: "bsc", transactionHash: HASH, rpcUrls: { BSC_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x38", eth_getTransactionByHash: { hash: HASH }, eth_getTransactionReceipt: { transactionHash: HASH, status: "0x0", blockNumber: "0x10" } }) });

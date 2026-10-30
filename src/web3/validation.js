@@ -74,6 +74,8 @@ export async function validateEvmTransaction({ network, transactionHash, rpcUrls
     return {
       status: "valid",
       reason: "confirmed_successfully",
+      // A successful receipt and confirmation count do not establish consensus finality.
+      finality: "not_assessed",
       network,
       chainId: actualChainId,
       transactionHash: transactionHash.toLowerCase(),
