@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test:
@@ -17,8 +17,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+          cache: npm
+      - name: Generate and commit lockfile if missing
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          if [[ -n "$(git status --porcelain package-lock.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "build: add reproducible npm lockfile"
+            git push
+          fi
+      - run: npm ci
       - run: npm run check
+      - run: npm audit --audit-level=moderate
 
   live-rpc:
     name: Live read-only RPC smoke test
