@@ -1,4 +1,6 @@
 import express from "express";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { randomUUID, timingSafeEqual } from "node:crypto";
@@ -10,6 +12,7 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(express.json({ limit: "1100kb", strict: true }));
+  const projectRoot = dirname(fileURLToPath(import.meta.url));
   app.use(rateLimit({
     windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
     limit: Number(process.env.RATE_LIMIT_MAX) || 100,
@@ -65,6 +68,8 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
   app.get("/api/reports/summary", (_req, res) => res.json({
     data: { projectCount: projects.size, generatedAt: new Date().toISOString(), note: "Summary covers in-memory project records for this process only." }
   }));
+  app.use("/wallet-modules", express.static(join(projectRoot, "web3"), { index: false, fallthrough: false }));
+  app.use(express.static(join(projectRoot, "../public"), { index: "index.html", fallthrough: true }));
   app.use((err, _req, res, _next) => {
     if (res.headersSent) return;
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "payload_too_large" });
