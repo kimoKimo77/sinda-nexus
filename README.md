@@ -1,62 +1,57 @@
 # Sinda Nexus
 
-منظومة ذكية وقابلة للتكوين لإدارة المشاريع والملفات والتقارير.
+منظومة ذكية وقابلة للتكوين لإدارة المشاريع والملفات والتقارير، مع واجهة تجريبية لتكامل محفظة EVM خارجية.
 
-## الهدف
+## بدء التشغيل
 
-يهدف المشروع إلى توفير أساس آمن ومنظم لإدارة المشاريع ومرفقاتها ومخرجاتها، مع قابلية التوسع لاحقًا وفق نتائج الاختبارات ومتطلبات التشغيل.
-
-## النطاق المبدئي
-
-- إدارة المشاريع ومعلوماتها الأساسية.
-- تنظيم الملفات والبيانات الوصفية المرتبطة بالمشاريع.
-- إنشاء التقارير ومتابعة حالة الإنجاز.
-- واجهات API منظمة وقابلة للاختبار.
-- إعدادات عبر متغيرات البيئة، مع عدم تخزين الأسرار في المستودع.
-- اختبارات آلية وفحوص أمنية قبل أي نشر.
-
-## الحالة الحالية
-
-هذا الملف هو التوثيق الأولي للمشروع. تُنفّذ الميزات تدريجيًا بعد فحص البنية الفعلية، مع توثيق ما تم تنفيذه وما اجتاز الاختبارات. لا يُفترض وجود تكاملات أو ميزات غير مثبتة في الكود.
-
-## مبادئ التطوير
-
-1. العمل على تغييرات صغيرة قابلة للمراجعة.
-2. عدم تضمين مفاتيح API أو كلمات المرور أو بيانات حقيقية في المستودع.
-3. التحقق من المدخلات ومعالجة الأخطاء وتطبيق أقل قدر من الصلاحيات.
-4. تشغيل الاختبارات والفحوص قبل الدمج أو النشر.
-5. عدم الدمج أو النشر إلى الإنتاج دون مراجعة النتائج وموافقة صريحة.
-
-## بدء التطوير
-
-يتطلب التشغيل Node.js 20 أو أحدث. استخدم `npm install` ثم `npm run check` لتشغيل الفحوص والاختبارات المحلية.
-
-## الترخيص
-
-لم يُحدَّد الترخيص بعد. لا تُفترض أذونات إعادة الاستخدام أو التوزيع قبل اختيار ترخيص مناسب.
-
-## Web3 State Validation API (preview)
-
-The isolated branch `feat/web3-state-validation` adds read-only endpoints:
-
-- `POST /api/web3/validate` — validates an EVM transaction hash against a configured RPC network and checks its receipt status.
-- `POST /api/web3/hash` — returns a SHA-256 digest for a UTF-8 payload.
-
-Supported networks: Ethereum Mainnet (`ethereum`, chain ID 1), BNB Smart Chain (`bsc`, chain ID 56), and Polygon PoS (`polygon`, chain ID 137).
-
-Configure trusted RPC URLs with `ETHEREUM_RPC_URL`, `BSC_RPC_URL`, and `POLYGON_RPC_URL`. Configure `WEB3_VALIDATION_API_KEY` and send it as `Authorization: Bearer <key>`. Production mode refuses Web3 validation when the API key is missing. Do not commit real credentials.
-
-Example request:
+يتطلب Node.js 20 أو أحدث:
 
 ```bash
-curl -X POST http://127.0.0.1:3000/api/web3/validate \
-  -H "content-type: application/json" \
-  -H "authorization: Bearer $WEB3_VALIDATION_API_KEY" \
-  -d '{"network":"ethereum","transactionHash":"0x<64-hex-characters>"}'
+npm install
+npm run check
+npm start
 ```
 
-A `valid` result means the RPC provider reported a matching chain, transaction and successful receipt at check time. Confirmations/finality are not calculated. Provider errors, pending transactions, and unavailable data return `unverified`. Bitcoin transaction validation is not included in this iteration. No wallet connection, signing, or transaction submission occurs.
+افتح `http://127.0.0.1:3000/` لواجهة MetaMask التجريبية. يتطلب الربط متصفحًا يدعم محفظة EIP-1193 مثل MetaMask.
 
-### Live RPC verification (read-only)
+## تكامل MetaMask (واجهة تجريبية)
 
-Run `npm run rpc:live` to contact public JSON-RPC endpoints (or override them with the three RPC environment variables) and verify each network's reported chain ID and latest block number. The GitHub Actions workflow runs this smoke test separately from the mocked unit tests. This confirms live endpoint connectivity and network identity at test time; it does not validate a user-supplied transaction, establish finality, or guarantee provider availability. The check uses only `eth_chainId` and `eth_blockNumber`; it never connects a wallet or submits a transaction.
+الواجهة في `public/`، ومساعد المحفظة في `src/web3/wallet.js`. يقدّم التطبيق:
+
+- ربط المحفظة بطلب صريح من المستخدم عبر `eth_requestAccounts`.
+- عرض الحساب المتصل والاستجابة لتغيير الحساب أو الشبكة.
+- تجهيز معاملة EVM محليًا والتحقق من العنوان والقيمة والبيانات وحقول الرسوم.
+- شاشة مراجعة أولية قبل فتح تأكيد MetaMask.
+- التحقق من chain ID قبل طلب `eth_sendTransaction`.
+- عرض hash الذي يعيده مزود المحفظة، مع توضيح أنه ليس إثباتًا على تأكيد المعاملة.
+
+### شبكات الواجهة
+
+الواجهة التجريبية تعرض شبكات اختبار فقط:
+- Ethereum Sepolia — chain ID `11155111`
+- BNB Smart Chain Testnet — chain ID `97`
+- Polygon Amoy — chain ID `80002`
+
+إذا كانت محفظتك على شبكة أخرى، سيتوقف التطبيق قبل استدعاء `eth_sendTransaction`. لا يغيّر التطبيق الشبكة تلقائيًا ولا يضيف شبكات إلى المحفظة. أضف شبكة الاختبار من إعدادات محفظتك ومصدر RPC موثوق، وتأكد من عنوان الشبكة قبل التجربة.
+
+**تنبيه أمني:** موافقتك داخل MetaMask هي الموافقة النهائية. لا تدخل عبارة الاسترداد أو المفتاح الخاص في الموقع أو الدردشة. لا تستخدم أموالًا حقيقية في الاختبار. لا يتم توقيع أو إرسال معاملة تلقائيًا عند فتح الصفحة أو ربط المحفظة.
+
+### حدود النسخة الحالية
+
+- `eth_sendTransaction` يجعل المحفظة تعرض طلب التوقيع والبث في عملية موافقة واحدة؛ لا يحصل التطبيق على مفتاح خاص ولا يضمن الحصول على raw signed transaction.
+- نتيجة hash تعني أن المزود قبل طلب الإرسال، ولا تعني أن المعاملة تأكدت أو اكتملت.
+- الواجهة لا تنشئ معاملات عقود ذكية معقدة ولا تقوم بمحاكاة تنفيذ العقد أو تقدير الرسوم تلقائيًا؛ أدخل البيانات بعناية وراجعها في المحفظة.
+- لا توجد خدمة توقيع خادمية أو إرسال آلي.
+- لم تُنفّذ أي معاملة حقيقية ضمن هذا التعديل.
+
+## API للتحقق من حالة المعاملة (قراءة فقط)
+
+يوفر `POST /api/web3/validate` التحقق من hash وReceipt عبر RPC مضبوط على الخادم، ويحسب عدد التأكيدات من `eth_blockNumber`. الشبكات المدعومة: Ethereum Mainnet (1)، BNB Smart Chain (56)، Polygon (137)، Sepolia (11155111)، BNB Testnet (97)، وPolygon Amoy (80002). متغيرات RPC هي `ETHEREUM_RPC_URL` و`BSC_RPC_URL` و`POLYGON_RPC_URL` و`ETHEREUM_SEPOLIA_RPC_URL` و`BSC_TESTNET_RPC_URL` و`POLYGON_AMOY_RPC_URL`. نقطة التحقق للقراءة فقط ومحددة بـ20 طلبًا في الدقيقة لكل عنوان IP بالإضافة إلى المحدد العام. نقطة `POST /api/web3/hash` محمية اختياريًا بـ`WEB3_VALIDATION_API_KEY`، وتكون مطلوبة في الإنتاج.
+
+تشغيل `npm run rpc:live` ينفذ فقط `eth_chainId` و`eth_blockNumber` ولا يرسل معاملات.
+
+## الأمان والاعتماد
+
+- لا تضع مفاتيح خاصة أو عبارات استرداد أو كلمات مرور في المستودع أو متغيرات الواجهة أو سجلات الخادم.
+- اختبارات المحفظة تستخدم مزودًا وهميًا؛ لا توقّع ولا تبث معاملات.
+- الدمج في `main` والنشر منفصلان عن هذه المسودة ويتطلبان مراجعة نتائج CI وموافقة صريحة.

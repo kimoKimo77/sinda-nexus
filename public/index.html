@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Sinda Nexus | ربط MetaMask</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">SINDA <span>NEXUS</span></a>
+      <span class="environment">بيئة تجريبية · Testnet</span>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">WEB3 · WALLET CONNECT</p>
+      <h1>بوابة المعاملات الآمنة</h1>
+      <p class="intro">جهّز معاملة EVM وراجع تفاصيلها قبل طلب موافقتك داخل MetaMask. لا نطلب العبارة السرية أو المفتاح الخاص مطلقًا.</p>
+    </section>
+    <section class="panel wallet-panel">
+      <div>
+        <h2>المحفظة الخارجية</h2>
+        <p id="wallet-status" class="muted">لم يتم ربط محفظة بعد.</p>
+      </div>
+      <button id="connect" class="button secondary" type="button">ربط MetaMask</button>
+    </section>
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">TRANSACTION BUILDER</p><h2>إعداد المعاملة</h2></div>
+        <span class="tag">شبكات اختبار فقط</span>
+      </div>
+      <div class="warning"><strong>تنبيه أمني:</strong> هذه نسخة تجريبية لشبكات الاختبار فقط. لا تستخدم أموالًا حقيقية. لا تقوم الواجهة بفك ترميز بيانات العقود أو محاكاة أثرها؛ لا ترسل بيانات أو تتفاعل مع عقد لا تثق به. راجع المستلم والقيمة والبيانات في MetaMask قبل الموافقة، ويمكنك الرفض بأمان.</div>
+      <form id="transaction-form">
+        <label for="network">شبكة الاختبار</label>
+        <select id="network" required>
+          <option value="ethereumSepolia">Ethereum Sepolia · 11155111</option>
+          <option value="bscTestnet">BNB Smart Chain Testnet · 97</option>
+          <option value="polygonAmoy">Polygon Amoy · 80002</option>
+        </select>
+        <label for="to">عنوان المستلم</label>
+        <input id="to" inputmode="text" autocomplete="off" spellcheck="false" placeholder="0x…" required>
+        <label for="value">القيمة (Wei، بصيغة Hex)</label>
+        <input id="value" value="0x0" autocomplete="off" spellcheck="false" required>
+        <label for="data">بيانات المعاملة (اختياري)</label>
+        <textarea id="data" rows="3" placeholder="0x"></textarea>
+        <button id="review" class="button primary" type="submit">مراجعة المعاملة في MetaMask</button>
+      </form>
+    </section>
+    <section id="result" class="panel result" hidden aria-live="polite">
+      <h2 id="result-title">نتيجة العملية</h2>
+      <pre id="result-body"></pre>
+    </section>
+    <footer>المفتاح الخاص يبقى داخل محفظتك. لا يتم توقيع أو إرسال أي معاملة دون موافقتك داخل MetaMask.</footer>
+  </main>
+</body>
+</html>
