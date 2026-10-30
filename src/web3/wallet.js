@@ -1,7 +1,4 @@
 const SUPPORTED_NETWORKS = Object.freeze({
-  ethereum: 1,
-  bsc: 56,
-  polygon: 137,
   ethereumSepolia: 11155111,
   bscTestnet: 97,
   polygonAmoy: 80002
