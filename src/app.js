@@ -116,6 +116,12 @@ export function createApp(options = {}) {
     }
   }
 
+  const trustProxy = options.trustProxy ?? process.env.TRUST_PROXY ?? false;
+  if (![false, true, 0, 1, "0", "1"].includes(trustProxy)) {
+    throw new Error("TRUST_PROXY must be a boolean or 0/1");
+  }
+
+  app.set("trust proxy", trustProxy === true || trustProxy === 1 || trustProxy === "1" ? 1 : false);
   app.disable("x-powered-by");
   app.disable("etag");
   app.use(helmet());
