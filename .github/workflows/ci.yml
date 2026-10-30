@@ -17,8 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+          cache: npm
+      - run: npm ci
       - run: npm run check
+      - run: npm audit --audit-level=moderate
 
   live-rpc:
     name: Live read-only RPC smoke test
