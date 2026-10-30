@@ -21,24 +21,35 @@ test("rejects unsupported networks", async () => {
   assert.equal(result.reason, "unsupported_network");
 });
 test("reports missing RPC configuration as unverified", async () => {
-  const result = await validateEvmTransaction({ network: "ethereum", transactionHash: HASH, rpcUrls: {} });
+  const result = await validateEvmTransaction({ network: "ethereumSepolia", transactionHash: HASH, rpcUrls: {} });
   assert.equal(result.reason, "rpc_not_configured");
 });
 test("detects a chain ID mismatch", async () => {
-  const result = await validateEvmTransaction({ network: "ethereum", transactionHash: HASH, rpcUrls: { ETHEREUM_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x38" }) });
+  const result = await validateEvmTransaction({ network: "ethereumSepolia", transactionHash: HASH, rpcUrls: { ETHEREUM_SEPOLIA_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x38" }) });
   assert.equal(result.reason, "network_mismatch");
 });
-test("marks successful mined transactions valid", async () => {
-  const result = await validateEvmTransaction({ network: "ethereum", transactionHash: HASH, rpcUrls: { ETHEREUM_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x1", eth_getTransactionByHash: { hash: HASH }, eth_getTransactionReceipt: { transactionHash: HASH, status: "0x1", blockNumber: "0x10" } }) });
+test("marks successful Sepolia transactions valid and calculates confirmations", async () => {
+  const result = await validateEvmTransaction({
+    network: "ethereumSepolia",
+    transactionHash: HASH,
+    rpcUrls: { ETHEREUM_SEPOLIA_RPC_URL: "https://rpc.example" },
+    fetchImpl: makeFetch({
+      eth_chainId: "0xaa36a7",
+      eth_getTransactionByHash: { hash: HASH },
+      eth_getTransactionReceipt: { transactionHash: HASH, status: "0x1", blockNumber: "0x10" },
+      eth_blockNumber: "0x13"
+    })
+  });
   assert.equal(result.status, "valid");
   assert.equal(result.blockNumber, "0x10");
+  assert.equal(result.confirmations, "4");
 });
 test("marks reverted transactions invalid", async () => {
   const result = await validateEvmTransaction({ network: "bsc", transactionHash: HASH, rpcUrls: { BSC_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x38", eth_getTransactionByHash: { hash: HASH }, eth_getTransactionReceipt: { transactionHash: HASH, status: "0x0", blockNumber: "0x10" } }) });
   assert.equal(result.reason, "transaction_reverted");
 });
 test("marks pending transactions unverified", async () => {
-  const result = await validateEvmTransaction({ network: "polygon", transactionHash: HASH, rpcUrls: { POLYGON_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x89", eth_getTransactionByHash: { hash: HASH }, eth_getTransactionReceipt: null }) });
+  const result = await validateEvmTransaction({ network: "polygonAmoy", transactionHash: HASH, rpcUrls: { POLYGON_AMOY_RPC_URL: "https://rpc.example" }, fetchImpl: makeFetch({ eth_chainId: "0x13882", eth_getTransactionByHash: { hash: HASH }, eth_getTransactionReceipt: null }) });
   assert.equal(result.reason, "transaction_pending_or_receipt_unavailable");
 });
 test("does not treat inherited object properties as supported networks", async () => {
@@ -46,7 +57,6 @@ test("does not treat inherited object properties as supported networks", async (
   assert.equal(result.status, "invalid");
   assert.equal(result.reason, "unsupported_network");
 });
-
 test("rejects malformed JSON-RPC envelopes as unverified", async () => {
   const result = await validateEvmTransaction({
     network: "ethereum",
@@ -56,4 +66,19 @@ test("rejects malformed JSON-RPC envelopes as unverified", async () => {
   });
   assert.equal(result.status, "unverified");
   assert.equal(result.reason, "rpc_unavailable_or_invalid_response");
+});
+test("returns unverified if latest block cannot be read after receipt", async () => {
+  const result = await validateEvmTransaction({
+    network: "bscTestnet",
+    transactionHash: HASH,
+    rpcUrls: { BSC_TESTNET_RPC_URL: "https://rpc.example" },
+    fetchImpl: makeFetch({
+      eth_chainId: "0x61",
+      eth_getTransactionByHash: { hash: HASH },
+      eth_getTransactionReceipt: { transactionHash: HASH, status: "0x1", blockNumber: "0x10" },
+      eth_blockNumber: null
+    })
+  });
+  assert.equal(result.status, "unverified");
+  assert.equal(result.reason, "invalid_latest_block_number");
 });
