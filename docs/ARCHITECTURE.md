@@ -7,6 +7,7 @@
 - JSON request parsing is applied only after API authentication, with a 100 KiB limit and explicit malformed/oversized-body responses.
 - Every `/api/*` route is protected by one or more configured Bearer service tokens. Tokens shorter than 32 characters are rejected at startup; comparisons use constant-time comparison for equal-length values.
 - API rate limiting runs before authentication so failed credential attempts are counted. The public liveness endpoint is not included in that limiter.
+- Trusted proxy handling is disabled by default; the Docker preview enables exactly one trusted reverse-proxy hop (Caddy) so rate limits use the client IP without exposing the API port.
 - API and health responses are marked `Cache-Control: no-store`.
 - Configuration values for rate limits and project capacity are strictly validated.
 - Project names/descriptions are validated and project count is capped.
