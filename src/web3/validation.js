@@ -36,7 +36,11 @@ export async function validateEvmTransaction({ network, transactionHash, rpcUrls
   const rpcUrl = rpcUrls?.[config.env];
   if (!rpcUrl) return { status: "unverified", reason: "rpc_not_configured", network, expectedChainId: config.chainId };
   try {
-    const actualChainId = Number.parseInt(await rpcCall(fetchImpl, rpcUrl, "eth_chainId"), 16);
+    const chainIdHex = await rpcCall(fetchImpl, rpcUrl, "eth_chainId");
+    if (typeof chainIdHex !== "string" || !/^0x[0-9a-f]+$/i.test(chainIdHex)) {
+      return { status: "unverified", reason: "invalid_provider_chain_id", network };
+    }
+    const actualChainId = Number.parseInt(chainIdHex, 16);
     if (!Number.isSafeInteger(actualChainId)) return { status: "unverified", reason: "invalid_provider_chain_id", network };
     if (actualChainId !== config.chainId) {
       return { status: "invalid", reason: "network_mismatch", network, expectedChainId: config.chainId, actualChainId };
