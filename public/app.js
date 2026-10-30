@@ -65,14 +65,21 @@ $("transaction-form").addEventListener("submit", async (event) => {
       "\n\nجارٍ التحقق من المعاملة عبر RPC للقراءة فقط..."
     );
     try {
-      const response = await fetch("/api/web3/validate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ network, transactionHash: result.transactionHash })
-      });
-      const payload = await response.json();
-      const verification = payload?.data;
-      if (!verification) throw new Error(payload?.error || "تعذر قراءة نتيجة RPC");
+      let verification;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const response = await fetch("/api/web3/validate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ network, transactionHash: result.transactionHash })
+        });
+        const payload = await response.json();
+        verification = payload?.data;
+        if (!verification) throw new Error(payload?.error || "تعذر قراءة نتيجة RPC");
+        const mayBePropagating = verification.status === "unverified" &&
+          ["transaction_not_found", "transaction_pending_or_receipt_unavailable"].includes(verification.reason);
+        if (!mayBePropagating || attempt === 3) break;
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
       const statusText = verification.status === "valid"
         ? "مؤكدة بنجاح"
         : verification.status === "invalid"
