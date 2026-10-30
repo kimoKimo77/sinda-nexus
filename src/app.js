@@ -9,7 +9,7 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
   const projects = new Map();
   app.disable("x-powered-by");
   app.use(helmet());
-  app.use(express.json({ limit: "1mb", strict: true }));
+  app.use(express.json({ limit: "1100kb", strict: true }));
   app.use(rateLimit({
     windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
     limit: Number(process.env.RATE_LIMIT_MAX) || 100,
