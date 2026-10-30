@@ -28,3 +28,12 @@ test("POST /api/web3/validate returns a verified read-only EVM result", async ()
   assert.equal(response.body.data.status, "valid");
   assert.equal(response.body.data.chainId, 1);
 });
+
+
+test("Web3 routes require the configured bearer key", async () => {
+  const app = createApp({ apiKey: "test-secret" });
+  const denied = await request(app).post("/api/web3/hash").send({ payload: "hello" });
+  assert.equal(denied.status, 401);
+  const allowed = await request(app).post("/api/web3/hash").set("Authorization", "Bearer test-secret").send({ payload: "hello" });
+  assert.equal(allowed.status, 200);
+});
