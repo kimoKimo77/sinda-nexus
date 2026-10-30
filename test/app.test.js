@@ -16,6 +16,7 @@ test("configuration rejects weak tokens and invalid limits", () => {
   assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", maxProjects: 100001 }), /MAX_PROJECTS/);
   assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", rateLimitWindowMs: 0 }), /RATE_LIMIT_WINDOW_MS/);
   assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", rateLimitMax: -1 }), /RATE_LIMIT_MAX/);
+  assert.throws(() => createApp({ apiTokens: [TOKEN], dataFile: ":memory:", trustProxy: "2" }), /TRUST_PROXY/);
 });
 
 test("health endpoint is public, uncached, and does not require API credentials", async () => {
@@ -78,6 +79,16 @@ test("API rate limit returns a stable 429 response", async () => {
   const limited = await auth(request(app).get("/api/projects"));
   assert.equal(limited.status, 429);
   assert.equal(limited.body.error, "rate_limit_exceeded");
+});
+
+test("trusted reverse proxy client IPs receive independent rate-limit buckets", async () => {
+  const app = makeApp({ rateLimitMax: 1, trustProxy: 1 });
+  const first = await auth(request(app).get("/api/projects")).set("X-Forwarded-For", "203.0.113.10");
+  assert.equal(first.status, 200);
+  const sameClient = await auth(request(app).get("/api/projects")).set("X-Forwarded-For", "203.0.113.10");
+  assert.equal(sameClient.status, 429);
+  const otherClient = await auth(request(app).get("/api/projects")).set("X-Forwarded-For", "203.0.113.11");
+  assert.equal(otherClient.status, 200);
 });
 
 test("failed authentication attempts are rate limited too", async () => {
