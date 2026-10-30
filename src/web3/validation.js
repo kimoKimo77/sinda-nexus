@@ -16,7 +16,7 @@ async function rpcCall(fetchImpl, url, method, params = []) {
   });
   if (!response.ok) throw new Error("RPC provider returned an unsuccessful response");
   const payload = await response.json();
-  if (payload.error || !Object.hasOwn(payload, "result")) throw new Error("RPC provider returned an invalid response");
+  if (payload?.jsonrpc !== "2.0" || payload.id !== 1 || payload.error || !Object.hasOwn(payload, "result")) throw new Error("RPC provider returned an invalid response");
   return payload.result;
 }
 
@@ -33,7 +33,7 @@ export async function validateEvmTransaction({ network, transactionHash, rpcUrls
   if (typeof transactionHash !== "string" || !HASH_PATTERN.test(transactionHash)) {
     return { status: "invalid", reason: "invalid_transaction_hash", network };
   }
-  const rpcUrl = rpcUrls[config.env];
+  const rpcUrl = rpcUrls?.[config.env];
   if (!rpcUrl) return { status: "unverified", reason: "rpc_not_configured", network, expectedChainId: config.chainId };
   try {
     const actualChainId = Number.parseInt(await rpcCall(fetchImpl, rpcUrl, "eth_chainId"), 16);
