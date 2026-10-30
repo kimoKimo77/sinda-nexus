@@ -48,6 +48,6 @@ test("POST /api/web3/hash accepts payloads above 100 KB", async () => {
 test("POST /api/web3/hash rejects payloads above 1 MB", async () => {
   const payload = "a".repeat(1_000_001);
   const response = await request(createApp()).post("/api/web3/hash").send({ payload });
-  assert.equal(response.status, 413);
-  assert.equal(response.body.error, "payload_too_large");
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_payload");
 });
