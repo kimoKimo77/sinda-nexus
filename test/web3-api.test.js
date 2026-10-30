@@ -9,7 +9,8 @@ const fakeFetch = async (_url, options) => {
   const values = {
     eth_chainId: "0x1",
     eth_getTransactionByHash: { hash: HASH },
-    eth_getTransactionReceipt: { transactionHash: HASH, status: "0x1", blockNumber: "0x2a" }
+    eth_getTransactionReceipt: { transactionHash: HASH, status: "0x1", blockNumber: "0x2a" },
+    eth_blockNumber: "0x2c"
   };
   return { ok: true, json: async () => ({ jsonrpc: "2.0", id: 1, result: values[method] }) };
 };
