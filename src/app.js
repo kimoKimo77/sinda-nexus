@@ -1,10 +1,10 @@
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { validateEvmTransaction, validatePayloadHash } from "./web3/validation.js";
 
-export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env } = {}) {
+export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env, apiKey = process.env.WEB3_VALIDATION_API_KEY } = {}) {
   const app = express();
   const projects = new Map();
   app.disable("x-powered-by");
@@ -17,12 +17,12 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env 
     legacyHeaders: false
   }));
   app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
-  app.post("/api/web3/validate", async (req, res) => {
+  const protectWeb3 = (req, res, next) => {\n    if (process.env.NODE_ENV === "production" && !apiKey) return res.status(503).json({ error: "web3_validation_not_configured" });\n    if (!apiKey) return next();\n    const supplied = req.get("authorization")?.replace(/^Bearer\\s+/i, "") ?? "";\n    const expectedBuffer = Buffer.from(apiKey);\n    const suppliedBuffer = Buffer.from(supplied);\n    if (expectedBuffer.length !== suppliedBuffer.length || !timingSafeEqual(expectedBuffer, suppliedBuffer)) {\n      return res.status(401).json({ error: "unauthorized" });\n    }\n    return next();\n  };\n  app.post("/api/web3/validate", protectWeb3, async (req, res) => {
     const { network, transactionHash } = req.body ?? {};
     const result = await validateEvmTransaction({ network, transactionHash, rpcUrls, fetchImpl });
     return res.status(result.status === "invalid" ? 422 : 200).json({ data: result });
   });
-  app.post("/api/web3/hash", (req, res) => {
+  app.post("/api/web3/hash", protectWeb3, (req, res) => {
     try {
       const sha256 = validatePayloadHash(req.body?.payload);
       return res.status(200).json({ data: { algorithm: "SHA-256", sha256 } });
