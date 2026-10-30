@@ -83,13 +83,13 @@ $("transaction-form").addEventListener("submit", async (event) => {
         "السبب: " + verification.reason,
         verification.blockNumber ? "رقم الكتلة: " + verification.blockNumber : null,
         verification.confirmations !== undefined ? "عدد التأكيدات الحالي: " + verification.confirmations : null
-      ].filter(Boolean).join("\\n");
-      showResult("نتيجة التحقق من المعاملة", "Hash: " + result.transactionHash + "\\n" + details);
+      ].filter(Boolean).join("\n");
+      showResult("نتيجة التحقق من المعاملة", "Hash: " + result.transactionHash + "\n" + details);
     } catch (verificationError) {
       showResult(
         "تم استلام Hash — التحقق غير متاح",
         "رقم المعاملة: " + result.transactionHash +
-        "\\nلم يتمكن الخادم من تأكيد Receipt عبر RPC. " +
+        "\nلم يتمكن الخادم من تأكيد Receipt عبر RPC. " +
         (verificationError?.message || String(verificationError))
       );
     }
