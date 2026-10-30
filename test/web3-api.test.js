@@ -37,3 +37,17 @@ test("Web3 routes require the configured bearer key", async () => {
   const allowed = await request(app).post("/api/web3/hash").set("Authorization", "Bearer test-secret").send({ payload: "hello" });
   assert.equal(allowed.status, 200);
 });
+
+test("POST /api/web3/hash accepts payloads above 100 KB", async () => {
+  const payload = "a".repeat(150_000);
+  const response = await request(createApp()).post("/api/web3/hash").send({ payload });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.sha256.length, 64);
+});
+
+test("POST /api/web3/hash rejects payloads above 1 MB", async () => {
+  const payload = "a".repeat(1_000_001);
+  const response = await request(createApp()).post("/api/web3/hash").send({ payload });
+  assert.equal(response.status, 413);
+  assert.equal(response.body.error, "payload_too_large");
+});
