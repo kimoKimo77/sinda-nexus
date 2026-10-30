@@ -125,6 +125,15 @@ export function createApp(options = {}) {
     return res.status(200).json({ status: "ok" });
   });
 
+  // Apply the limiter before authentication so failed credential guesses are counted too.
+  app.use("/api", rateLimit({
+    windowMs: rateLimitWindowMs,
+    limit: rateLimitMax,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    handler: (_req, res) => res.status(429).json({ error: "rate_limit_exceeded" })
+  }));
+
   app.use("/api", (req, res, next) => {
     res.set("Cache-Control", "no-store");
     if (tokens.length === 0) {
@@ -136,14 +145,6 @@ export function createApp(options = {}) {
     }
     return next();
   });
-
-  app.use("/api", rateLimit({
-    windowMs: rateLimitWindowMs,
-    limit: rateLimitMax,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    handler: (_req, res) => res.status(429).json({ error: "rate_limit_exceeded" })
-  }));
 
   app.use("/api", express.json({ limit: BODY_LIMIT, strict: true, type: "application/json" }));
 
