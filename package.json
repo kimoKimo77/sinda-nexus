@@ -1,8 +1,8 @@
 {
   "name": "sinda-nexus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Configurable project, file metadata, and reporting API",
+  "description": "Secure starter API for projects and reporting",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
