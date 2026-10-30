@@ -8,6 +8,7 @@ services:
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
+      TRUST_PROXY: 1
       PORT: 3000
       API_TOKENS: ${API_TOKENS:?Set API_TOKENS in the local .env file}
       DATA_FILE: /app/data/projects.json
