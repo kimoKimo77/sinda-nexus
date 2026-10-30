@@ -22,7 +22,7 @@
 3. The in-memory rate-limit store is per process. Multi-instance deployments need a shared store and trusted proxy configuration.
 4. No durable/tamper-evident audit ledger, file-upload pipeline, or fine-grained authorization is implemented.
 5. A v3 `package-lock.json` matching the current `package.json` manifest is committed. GitHub Actions run #95 verified `npm ci`, syntax checks, automated tests, and `npm audit --audit-level=high` on Node.js 20 and 22.
-6. The passing CI run validates the current commit's locked install, tests, and high-severity dependency audit. It does not replace a broader application security review or VPS smoke test.
-7. Preview deployment assets are being prepared for Docker Compose and Caddy on Hostinger VPS. VPS access, domain/DNS, TLS issuance, server firewall, secret provisioning, backups, and live smoke tests remain unverified; no deployment has occurred.
+6. The passing CI run #95 validates the current commit's locked install, tests, and high-severity dependency audit on Node.js 20 and 22. Docker image build and Compose configuration validation are now included in CI; their results must be checked on the latest commit.
+7. Dockerfile, Compose preview stack, and Caddy reverse-proxy configuration are committed. Hostinger VPS access, domain/DNS, TLS issuance, server firewall, secret provisioning, backups, and live smoke tests remain unverified; no deployment has occurred.
 
 Use only synthetic test data. Do not expose this preview API publicly or use it for confidential, financial, or customer records. No merge, real financial integration, or deployment is included or authorized by this branch.
