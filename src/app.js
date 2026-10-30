@@ -17,7 +17,22 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
     legacyHeaders: false
   }));
   app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
-  const protectWeb3 = (req, res, next) => {\n    if (process.env.NODE_ENV === "production" && !apiKey) return res.status(503).json({ error: "web3_validation_not_configured" });\n    if (!apiKey) return next();\n    const supplied = req.get("authorization")?.replace(/^Bearer\\s+/i, "") ?? "";\n    const expectedBuffer = Buffer.from(apiKey);\n    const suppliedBuffer = Buffer.from(supplied);\n    if (expectedBuffer.length !== suppliedBuffer.length || !timingSafeEqual(expectedBuffer, suppliedBuffer)) {\n      return res.status(401).json({ error: "unauthorized" });\n    }\n    return next();\n  };\n  app.post("/api/web3/validate", protectWeb3, async (req, res) => {
+
+  const protectWeb3 = (req, res, next) => {
+    if (process.env.NODE_ENV === "production" && !apiKey) {
+      return res.status(503).json({ error: "web3_validation_not_configured" });
+    }
+    if (!apiKey) return next();
+    const supplied = req.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const expectedBuffer = Buffer.from(apiKey);
+    const suppliedBuffer = Buffer.from(supplied);
+    if (expectedBuffer.length !== suppliedBuffer.length || !timingSafeEqual(expectedBuffer, suppliedBuffer)) {
+      return res.status(401).json({ error: "unauthorized" });
+    }
+    return next();
+  };
+
+  app.post("/api/web3/validate", protectWeb3, async (req, res) => {
     const { network, transactionHash } = req.body ?? {};
     const result = await validateEvmTransaction({ network, transactionHash, rpcUrls, fetchImpl });
     return res.status(result.status === "invalid" ? 422 : 200).json({ data: result });
@@ -30,6 +45,7 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
       return res.status(400).json({ error: "invalid_payload", message: "payload must be a string up to 1 MB." });
     }
   });
+
   app.get("/api/projects", (_req, res) => res.json({ data: [...projects.values()] }));
   app.post("/api/projects", (req, res) => {
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
