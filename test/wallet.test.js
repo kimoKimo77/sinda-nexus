@@ -23,6 +23,9 @@ test("supports only configured test networks for the demo", () => {
 
 test("rejects unsupported networks and unsafe transaction fields", () => {
   assert.throws(() => prepareEvmTransaction({ network: "unknown", transaction: { to: RECIPIENT } }), /unsupported_network/);
+  assert.throws(() => prepareEvmTransaction({ network: "ethereum", transaction: { to: RECIPIENT } }), /unsupported_network/);
+  assert.throws(() => prepareEvmTransaction({ network: "bsc", transaction: { to: RECIPIENT } }), /unsupported_network/);
+  assert.throws(() => prepareEvmTransaction({ network: "polygon", transaction: { to: RECIPIENT } }), /unsupported_network/);
   assert.throws(() => prepareEvmTransaction({ network: "ethereumSepolia", transaction: { to: RECIPIENT, privateKey: "secret" } }), /unsupported_transaction_field/);
   assert.throws(() => prepareEvmTransaction({ network: "ethereumSepolia", transaction: { to: "0x1234" } }), /20-byte/);
   assert.throws(() => prepareEvmTransaction({ network: "ethereumSepolia", transaction: { to: RECIPIENT, value: "10" } }), /canonical hexadecimal/);
