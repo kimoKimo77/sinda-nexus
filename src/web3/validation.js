@@ -3,9 +3,13 @@ import { createHash } from "node:crypto";
 const NETWORKS = Object.freeze({
   ethereum: { chainId: 1, env: "ETHEREUM_RPC_URL" },
   bsc: { chainId: 56, env: "BSC_RPC_URL" },
-  polygon: { chainId: 137, env: "POLYGON_RPC_URL" }
+  polygon: { chainId: 137, env: "POLYGON_RPC_URL" },
+  ethereumSepolia: { chainId: 11155111, env: "ETHEREUM_SEPOLIA_RPC_URL" },
+  bscTestnet: { chainId: 97, env: "BSC_TESTNET_RPC_URL" },
+  polygonAmoy: { chainId: 80002, env: "POLYGON_AMOY_RPC_URL" }
 });
 const HASH_PATTERN = /^0x[a-fA-F0-9]{64}$/;
+const QUANTITY_PATTERN = /^0x(?:0|[1-9a-fA-F][0-9a-fA-F]*)$/;
 
 async function rpcCall(fetchImpl, url, method, params = []) {
   const response = await fetchImpl(url, {
@@ -37,7 +41,7 @@ export async function validateEvmTransaction({ network, transactionHash, rpcUrls
   if (!rpcUrl) return { status: "unverified", reason: "rpc_not_configured", network, expectedChainId: config.chainId };
   try {
     const chainIdHex = await rpcCall(fetchImpl, rpcUrl, "eth_chainId");
-    if (typeof chainIdHex !== "string" || !/^0x[0-9a-f]+$/i.test(chainIdHex)) {
+    if (typeof chainIdHex !== "string" || !QUANTITY_PATTERN.test(chainIdHex)) {
       return { status: "unverified", reason: "invalid_provider_chain_id", network };
     }
     const actualChainId = Number.parseInt(chainIdHex, 16);
@@ -57,7 +61,25 @@ export async function validateEvmTransaction({ network, transactionHash, rpcUrls
     }
     if (receipt.status === "0x0") return { status: "invalid", reason: "transaction_reverted", network, chainId: actualChainId, blockNumber: receipt.blockNumber ?? null };
     if (receipt.status !== "0x1") return { status: "unverified", reason: "unknown_receipt_status", network, chainId: actualChainId };
-    return { status: "valid", reason: "confirmed_successfully", network, chainId: actualChainId, transactionHash: transactionHash.toLowerCase(), blockNumber: receipt.blockNumber ?? null, confirmations: "not_calculated" };
+    if (typeof receipt.blockNumber !== "string" || !QUANTITY_PATTERN.test(receipt.blockNumber)) {
+      return { status: "unverified", reason: "invalid_receipt_block_number", network, chainId: actualChainId };
+    }
+    const latestBlockHex = await rpcCall(fetchImpl, rpcUrl, "eth_blockNumber");
+    if (typeof latestBlockHex !== "string" || !QUANTITY_PATTERN.test(latestBlockHex)) {
+      return { status: "unverified", reason: "invalid_latest_block_number", network, chainId: actualChainId };
+    }
+    const receiptBlock = BigInt(receipt.blockNumber);
+    const latestBlock = BigInt(latestBlockHex);
+    const confirmations = latestBlock >= receiptBlock ? (latestBlock - receiptBlock + 1n) : 0n;
+    return {
+      status: "valid",
+      reason: "confirmed_successfully",
+      network,
+      chainId: actualChainId,
+      transactionHash: transactionHash.toLowerCase(),
+      blockNumber: receipt.blockNumber,
+      confirmations: confirmations.toString()
+    };
   } catch {
     return { status: "unverified", reason: "rpc_unavailable_or_invalid_response", network };
   }
