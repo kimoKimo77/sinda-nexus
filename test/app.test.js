@@ -41,3 +41,28 @@ test("unknown project returns 404", async () => {
   const response = await request(app).get("/api/projects/not-a-real-id");
   assert.equal(response.status, 404);
 });
+
+
+test("read-only validation endpoint verifies a testnet receipt and confirmations", async () => {
+  const hash = "0x" + "a".repeat(64);
+  const responses = {
+    eth_chainId: "0xaa36a7",
+    eth_getTransactionByHash: { hash },
+    eth_getTransactionReceipt: { transactionHash: hash, status: "0x1", blockNumber: "0x20" },
+    eth_blockNumber: "0x22"
+  };
+  const rpcApp = createApp({
+    rpcUrls: { ETHEREUM_SEPOLIA_RPC_URL: "https://rpc.example" },
+    fetchImpl: async (_url, options) => {
+      const { method } = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ jsonrpc: "2.0", id: 1, result: responses[method] }) };
+    }
+  });
+  const response = await request(rpcApp).post("/api/web3/validate").send({
+    network: "ethereumSepolia",
+    transactionHash: hash
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.status, "valid");
+  assert.equal(response.body.data.confirmations, "3");
+});
