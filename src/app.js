@@ -35,7 +35,7 @@ export function createApp({ fetchImpl = globalThis.fetch, rpcUrls = process.env,
     return next();
   };
 
-  app.post("/api/web3/validate", protectWeb3, async (req, res) => {
+  app.post("/api/web3/validate", rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }), async (req, res) => {
     const { network, transactionHash } = req.body ?? {};
     const result = await validateEvmTransaction({ network, transactionHash, rpcUrls, fetchImpl });
     return res.status(result.status === "invalid" ? 422 : 200).json({ data: result });
