@@ -1,7 +1,7 @@
 import { INVESTMENT_MARKETS, INVESTMENT_RESTRICTIONS } from "./catalog.js";
 
-function requireIdentity(auth, request) {
-  const identity = auth?.authenticate?.(request);
+async function requireIdentity(auth, request) {
+  const identity = await auth?.authenticate?.(request);
   if (!identity) {
     const error = new Error("Authentication required.");
     error.status = 401;
@@ -70,7 +70,7 @@ export function createInvestmentReadHandlers({ auth, marketDataProvider = null }
   }
   return {
     async markets(request) {
-      const identity = requireIdentity(auth, request);
+      const identity = await requireIdentity(auth, request);
       return {
         userId: identity.sub,
         mode: "read-only",
@@ -79,7 +79,7 @@ export function createInvestmentReadHandlers({ auth, marketDataProvider = null }
       };
     },
     async snapshot(request, marketId) {
-      requireIdentity(auth, request);
+      await requireIdentity(auth, request);
       const market = INVESTMENT_MARKETS.find(item => item.id === marketId);
       if (!market) {
         const error = new Error("Unknown market.");
