@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 function requiredText(value, field) {
   if (typeof value !== "string" || !value.trim()) throw new TypeError(field + " is required.");
   return value.trim();
@@ -8,7 +10,7 @@ export class InMemoryProjectMemory {
 
   async remember({ projectId, content, source = "user", tags = [] } = {}) {
     const entry = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       projectId: requiredText(projectId, "projectId"),
       content: requiredText(content, "content"),
       source: requiredText(source, "source"),
@@ -21,7 +23,7 @@ export class InMemoryProjectMemory {
 
   async search({ projectId, query = "", limit = 10 } = {}) {
     const scope = requiredText(projectId, "projectId");
-    const terms = String(query).toLowerCase().split(/\\s+/).filter(Boolean);
+    const terms = String(query).toLowerCase().split(/\s+/).filter(Boolean);
     return this.#entries
       .filter(item => item.projectId === scope)
       .map(item => ({ item, score: terms.filter(term => item.content.toLowerCase().includes(term) || item.tags.some(tag => tag.toLowerCase().includes(term))).length }))
