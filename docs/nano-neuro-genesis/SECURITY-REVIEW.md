@@ -30,18 +30,17 @@ The automated CI smoke test runs 100, 1,000, 5,000 and 10,000-agent stages. At e
 
 ## CI load observations
 
-Latest verified head: `f69ffc930e43af5235fe657a136c5a2ca066eae2`  
-GitHub Actions run: [41177568561](https://github.com/kimoKimo77/sinda-nexus/actions/runs/41177568561)
+Latest verified code head: `8edb1544292a8e0254322c9c9e584aaee52c8f0c`  
+GitHub Actions run: [41177621326](https://github.com/kimoKimo77/sinda-nexus/actions/runs/41177621326)
 
 | Virtual agents | Node 22 total stage time | Node 24 total stage time |
 |---:|---:|---:|
-| 100 | 9.10 ms | 8.48 ms |
-| 1,000 | 47.95 ms | 24.82 ms |
-| 5,000 | 131.20 ms | 82.44 ms |
-| 10,000 | 116.46 ms | 172.48 ms |
+| 100 | 8.83 ms | 5.90 ms |
+| 1,000 | 33.77 ms | 15.73 ms |
+| 5,000 | 184.53 ms | 45.23 ms |
+| 10,000 | 109.93 ms | 87.91 ms |
 
-At the 10,000-agent stage, process RSS was approximately 91.11 MiB on Node 22 and 95.66 MiB on Node 24. Each job completed `npm ci` and `npm run check`; each reported 35 tests passed and 0 failed. `npm ci` reported 0 dependency vulnerabilities. These are single-run CI observations; timing variance and garbage collection make them unsuitable as capacity guarantees or production SLOs.
-
+At the 10,000-agent stage, process RSS was approximately 90.91 MiB on Node 22 and 97.02 MiB on Node 24. Each matrix job completed `npm ci` and `npm run check`; each reported 35 tests passed and 0 failed. `npm ci` reported 0 dependency vulnerabilities. The timings are single-run observations and are non-monotonic due to runner/GC variance; they are not capacity guarantees, browser benchmarks, or production SLOs.
 ## Residual risks and decision
 - The approval verifier is an explicit trusted-host integration point, not an authentication implementation. No web API currently injects a real identity provider or consumes durable one-time approvals.
 - Static CSP meta directives do not replace HTTP response security headers; the host must configure them.
