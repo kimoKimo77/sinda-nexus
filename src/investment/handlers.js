@@ -10,32 +10,55 @@ function requireIdentity(auth, request) {
   return identity;
 }
 
+function optionalFiniteNumber(value, fieldName) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" && typeof value !== "string") {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  if (typeof value === "string" && value.trim() === "") {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  return parsed;
+}
+
 function safeSnapshot(snapshot, market) {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
     throw new TypeError("Market data provider returned an invalid snapshot.");
   }
-  if (snapshot.market !== market || typeof snapshot.asOf !== "string" || typeof snapshot.source !== "string") {
-    throw new TypeError("Market data provider omitted required provenance fields.");
+  if (snapshot.market !== market || typeof snapshot.asOf !== "string" ||
+      !Number.isFinite(Date.parse(snapshot.asOf)) ||
+      typeof snapshot.source !== "string" || !snapshot.source.trim()) {
+    throw new TypeError("Market data provider omitted valid provenance fields.");
   }
-  if (!Array.isArray(snapshot.items)) throw new TypeError("Market data provider must return an items array.");
+  if (!Array.isArray(snapshot.items) || snapshot.items.length > 100) {
+    throw new TypeError("Market data provider must return at most 100 items.");
+  }
   return {
     market,
-    asOf: snapshot.asOf,
-    source: snapshot.source.slice(0, 120),
-    items: snapshot.items.slice(0, 100).map(item => {
-      if (!item || typeof item.symbol !== "string" || typeof item.name !== "string") {
+    asOf: new Date(snapshot.asOf).toISOString(),
+    source: snapshot.source.trim().slice(0, 120),
+    items: snapshot.items.map(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item) ||
+          typeof item.symbol !== "string" || !item.symbol.trim() ||
+          typeof item.name !== "string" || !item.name.trim()) {
         throw new TypeError("Market data provider returned an invalid item.");
       }
-      const price = item.price === null || item.price === undefined ? null : Number(item.price);
-      if (price !== null && (!Number.isFinite(price) || price < 0)) {
+      const price = optionalFiniteNumber(item.price, "price");
+      if (price !== null && price < 0) {
         throw new TypeError("Market data provider returned an invalid price.");
       }
       return {
-        symbol: item.symbol.slice(0, 32),
-        name: item.name.slice(0, 120),
+        symbol: item.symbol.trim().slice(0, 32),
+        name: item.name.trim().slice(0, 120),
         price,
-        currency: typeof item.currency === "string" ? item.currency.slice(0, 8) : null,
-        changePercent: Number.isFinite(Number(item.changePercent)) ? Number(item.changePercent) : null
+        currency: typeof item.currency === "string" && item.currency.trim()
+          ? item.currency.trim().slice(0, 8)
+          : null,
+        changePercent: optionalFiniteNumber(item.changePercent, "changePercent")
       };
     })
   };
