@@ -1,0 +1,16 @@
+:root{font-family:system-ui,sans-serif;color:#e9eef7;background:#0c1220}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;max-width:1100px;margin-inline:auto}
+.panel{background:#151f32;border:1px solid #30415d;border-radius:16px;padding:22px;margin:16px 0}
+.eyebrow{color:#8fb4ff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem}
+h1{font-size:clamp(1.8rem,5vw,3rem);margin:.35em 0}
+.muted{color:#aab8cc;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:#0e1728;padding:16px;border-radius:12px}
+.value{font-size:1.8rem;font-weight:700}
+button{background:#8fb4ff;color:#07101e;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.bar{height:12px;background:#293a55;border-radius:20px;overflow:hidden;margin:12px 0}
+.bar span{display:block;height:100%;width:0;background:#8fb4ff;transition:width .2s}
+.notice{border-inline-start:3px solid #d8aa54;padding:10px 14px;background:#211d16;color:#f2d9a8}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
