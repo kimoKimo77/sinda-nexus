@@ -3,7 +3,7 @@ name: Sinda AI Core
 on:
   push:
     branches:
-      - "feat/sinda-autonomous-ai-core"
+      - "feat/**"
   pull_request:
     branches:
       - "main"
