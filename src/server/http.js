@@ -94,7 +94,8 @@ export function createSindaHttpServer({
           try { checks[name]=(await check())===true?"ok":"not_ready"; }
           catch { checks[name]="error"; }
         }
-        const ready=Object.values(checks).every(value=>value==="ok");
+        const checkNames=Object.keys(checks);
+        const ready=checkNames.length>0 && checkNames.every(name=>checks[name]==="ok");
         sendJson(response,ready?200:503,{status:ready?"ready":"not_ready",checks,requestId});
         return;
       }
