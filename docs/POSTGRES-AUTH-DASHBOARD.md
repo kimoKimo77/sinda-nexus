@@ -5,10 +5,10 @@
 - Ordered PostgreSQL migrations in `src/db/migrations.js`, with a PostgreSQL advisory lock, transaction per migration, SHA-256 checksums, and refusal to rerun an edited migration.
 - Tenant schema: organizations, users, projects, project membership, agents and audit events.
 - PostgreSQL row-level security on projects, project memberships, agents and audit events. The application sets transaction-local `sinda.organization_id`, `sinda.user_id` and `sinda.project_id` values for each tenant request.
-- Scrypt password hashes and HMAC-signed, expiring bearer sessions. Public self-registration is not exposed.
+- Scrypt password hashes and HMAC-signed, expiring bearer sessions. Invalid credentials consistently return HTTP 401. Public self-registration is not exposed.
 - One-time first-owner provisioning helper. It only succeeds while the users table is empty.
 - Arabic RTL Preview dashboard at `/dashboard`, served with a same-origin JavaScript asset and restrictive Content Security Policy.
-- Project list, project dashboard, agent list and agent creation handlers. Agents are created in `idle` state only; this API does not execute autonomous work.
+- Project list, project dashboard, agent list and agent creation handlers. Per-project agent quota checks are serialized with a transaction-scoped advisory lock. Agents are created in `idle` state only; this API does not execute autonomous work.
 - Bounded JSON request bodies, request IDs, no-store responses and generic server errors.
 
 ## Compose the application
@@ -24,7 +24,7 @@ const migrationPool = new pg.Pool({ connectionString: process.env.SINDA_MIGRATIO
 server.listen(Number(process.env.PORT || 3000), "127.0.0.1");
 ```
 
-The repository intentionally does not bundle a PostgreSQL driver yet. This keeps dependency lockfiles unchanged until the deployment environment and supported driver version are explicitly selected. For `npm start`, set `SINDA_DATABASE_POOL_MODULE` to an absolute file URL for a trusted adapter module that exports `pool` or `createPool()`. The adapter may return `{ pool, migrationPool }`; use a schema-owner pool only for migrations and a separate non-owner runtime pool for HTTP requests. Also set `DATABASE_URL` and a random `SINDA_SESSION_SECRET` (at least 32 bytes). Set `SINDA_RUN_MIGRATIONS=true` only during a planned migration window after a backup; otherwise run migrations separately. If the pool module is absent, the server deliberately starts in liveness-only mode and does not expose authenticated dashboard routes. The factory and migration runner are tested with injected pools; a live PostgreSQL integration run is still required before deployment.
+The repository currently accepts an injected PostgreSQL pool through a trusted adapter. For `npm start`, set `SINDA_DATABASE_POOL_MODULE` to an absolute file URL for a trusted adapter module that exports `pool` or `createPool()`. The CI workflow temporarily installs the pinned `pg@8.23.1` package without changing the repository lockfile so it can run live PostgreSQL integration tests; this temporary CI install is not a substitute for committing the runtime dependency and generated lockfile. The adapter may return `{ pool, migrationPool }`; use a schema-owner pool only for migrations and a separate non-owner runtime pool for HTTP requests. Also set `DATABASE_URL` and a random `SINDA_SESSION_SECRET` (at least 32 bytes). Set `SINDA_RUN_MIGRATIONS=true` only during a planned migration window after a backup; otherwise run migrations separately. If the pool module is absent, the server deliberately starts in liveness-only mode and does not expose authenticated dashboard routes. The factory and migration runner are tested with injected pools. CI also runs a live PostgreSQL RLS test using a non-owner role and verifies cross-tenant row isolation.
 
 ## Provision the first owner
 
