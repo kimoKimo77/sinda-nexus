@@ -10,7 +10,7 @@
 ## Architecture
 - `agent-registry.js`: identity, project isolation, capability allowlists, parent lineage, depth/fan-out/capacity quotas, and a fail-closed approval-verifier interface.
 - `genome.js`: versioned JSON traits, deterministic seed-based mutation and crossover; no executable genome.
-- `swarm.js`: bounded task delegation to allow-listed actions with indexed per-agent quotas; no shell, network, wallet, or arbitrary tool execution.
+- `swarm.js`: bounded task delegation to allow-listed actions with project/agent-indexed quotas, project-scoped task IDs and mandatory project-scoped snapshots; no shell, network, wallet, or arbitrary tool execution.
 - `neural-sensors.js`: synthetic event input accepted only for registered agents within the same project.
 - `fusion.js`: resolves source agents from the trusted registry, then applies same-project capability intersection and explicit allowlisting.
 - `simulator.js`: creates up to 10,000 in-memory virtual agents when the host injects a trusted approval verifier.
