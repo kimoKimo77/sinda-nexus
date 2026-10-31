@@ -28,6 +28,20 @@
 ## Staged load protocol
 The automated CI smoke test runs 100, 1,000, 5,000 and 10,000-agent stages. At each level it creates a registry population, ingests one synthetic sensor event per child agent, and delegates one bounded analysis task per child agent. It records phase timings, heap delta and process RSS; it does not use an arbitrary machine-dependent pass/fail time limit.
 
+## CI load observations
+
+Latest verified head: `f69ffc930e43af5235fe657a136c5a2ca066eae2`  
+GitHub Actions run: [41177568561](https://github.com/kimoKimo77/sinda-nexus/actions/runs/41177568561)
+
+| Virtual agents | Node 22 total stage time | Node 24 total stage time |
+|---:|---:|---:|
+| 100 | 9.10 ms | 8.48 ms |
+| 1,000 | 47.95 ms | 24.82 ms |
+| 5,000 | 131.20 ms | 82.44 ms |
+| 10,000 | 116.46 ms | 172.48 ms |
+
+At the 10,000-agent stage, process RSS was approximately 91.11 MiB on Node 22 and 95.66 MiB on Node 24. Each job completed `npm ci` and `npm run check`; each reported 35 tests passed and 0 failed. `npm ci` reported 0 dependency vulnerabilities. These are single-run CI observations; timing variance and garbage collection make them unsuitable as capacity guarantees or production SLOs.
+
 ## Residual risks and decision
 - The approval verifier is an explicit trusted-host integration point, not an authentication implementation. No web API currently injects a real identity provider or consumes durable one-time approvals.
 - Static CSP meta directives do not replace HTTP response security headers; the host must configure them.
