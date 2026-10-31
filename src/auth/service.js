@@ -79,3 +79,39 @@ export function createAuthService({ pool, sessionSecret, sessionTtlSeconds } = {
     }
   };
 }
+
+export async function provisionFirstOwner({ pool, email, password, displayName, organizationName, initialProjectName = "My first project" } = {}) {
+  if (!pool || typeof pool.connect !== "function") throw new TypeError("A PostgreSQL pool is required.");
+  if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length>254) throw new TypeError("A valid email is required.");
+  const passwordHash=await hashPassword(password);
+  const client=await pool.connect();
+  const organizationId=randomUUID(), userId=randomUUID(), projectId=randomUUID();
+  try {
+    await client.query("BEGIN");
+    const count=await client.query("SELECT count(*)::int AS count FROM users");
+    if (count.rows[0].count!==0) throw new Error("Initial owner provisioning is only available when the users table is empty.");
+    await client.query("INSERT INTO organizations(id,name) VALUES($1,$2)",[organizationId,String(organizationName||"SINDA Workspace").slice(0,160)]);
+    await client.query(
+      "INSERT INTO users(id,organization_id,email,password_hash,display_name,role) VALUES($1,$2,$3,$4,$5,'owner')",
+      [userId,organizationId,email.trim().toLowerCase(),passwordHash,String(displayName||"Workspace Owner").slice(0,120)]
+    );
+    await client.query(
+      "SELECT set_config('sinda.organization_id',$1,true),set_config('sinda.user_id',$2,true),set_config('sinda.project_id',$3,true)",
+      [organizationId,userId,projectId]
+    );
+    await client.query(
+      "INSERT INTO projects(id,organization_id,name,description,status,created_by) VALUES($1,$2,$3,'Initial Preview workspace','preview',$4)",
+      [projectId,organizationId,String(initialProjectName).slice(0,160),userId]
+    );
+    await client.query("INSERT INTO project_members(project_id,user_id,role) VALUES($1,$2,'owner')",[projectId,userId]);
+    await client.query(
+      "INSERT INTO audit_events(organization_id,project_id,actor_user_id,event_type,details) VALUES($1,$2,$3,'workspace.owner_provisioned','{}'::jsonb)",
+      [organizationId,projectId,userId]
+    );
+    await client.query("COMMIT");
+    return { organizationId,userId,projectId,email:email.trim().toLowerCase() };
+  } catch(error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally { client.release(); }
+}
