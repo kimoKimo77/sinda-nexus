@@ -64,7 +64,7 @@ test("signed sessions reject tampering and expiration",()=>{
 
 test("login returns a signed session and generic errors for invalid credentials",async()=>{
   const passwordHash=await hashPassword("correct-horse-battery-staple");
-  const pool={query:async(_sql,params)=>({rows:params[0]==="owner@example.test"?[{
+  const pool={query:async(_sql,params)=>({rows:params[0]==="owner@example.test" || params[0]==="user-1"?[{
     id:"user-1",organization_id:"org-1",email:"owner@example.test",display_name:"Owner",
     role:"owner",password_hash:passwordHash,active:true
   }]:[]})};
