@@ -36,10 +36,19 @@ The first live run exposed a missing explicit SELECT grant in the test harness. 
 
 1. **No live market provider is configured.** Current UI shows the five market categories but no prices, quotes, property valuations or recommendations. Provider accuracy, freshness, licensing and uptime are unverified.
 2. **No real portfolio or financial account is connected.** Holdings, account balances and broker data are not available in this Preview.
-3. **Inherited authentication has no demonstrated session revocation or MFA in this release.** The investment UI keeps its bearer token in page memory and clears it on logout; the underlying signed-session design still needs revocation/rotation and MFA before production.
+3. **Authentication hardening is partial.** Each authenticated request now verifies the signed token and re-reads the account's active state and current role from PostgreSQL, so deactivation and role changes take effect without waiting for token expiry. The token format validates issue time, expiry and session ID. Persistent per-session revocation, refresh-token rotation and MFA are not implemented and remain production blockers.
 4. **Live RLS verification passed in disposable CI.** This proves the tested policies and read-only runtime role for the exercised tables and scenarios; it does not prove every possible query path or production database configuration.
 5. **No mobile-browser visual QA or production penetration test has been completed.**
 6. **The current dependency audit is narrow.** It reports the lockfile's single package and is not a substitute for SAST, secret scanning, container scanning or a full third-party supply-chain review.
+
+## Follow-up hardening in PR #17
+
+- Session claims now require valid issue/expiry timestamps and a UUID session ID.
+- Authentication rechecks that the account remains active and uses the current database role on every protected request.
+- Dashboard and investment handlers await the database-backed identity check.
+- Regression tests cover account deactivation, role changes, and malformed bearer sessions.
+
+These changes reduce stale-claim and disabled-account risk; they do not provide persistent session revocation or MFA.
 
 ## Release decision
 
