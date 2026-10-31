@@ -48,7 +48,7 @@ test("password hashes use scrypt and verify without storing plaintext",async()=>
   assert.match(hash,/^scrypt\$/);
   assert.equal(await verifyPassword("a-very-long-test-password",hash),true);
   assert.equal(await verifyPassword("incorrect-password",hash),false);
-  assert.throws(()=>hashPassword("short"),/12 to 256/);
+  await assert.rejects(()=>hashPassword("short"),/12 to 256/);
 });
 
 test("signed sessions reject tampering and expiration",()=>{
