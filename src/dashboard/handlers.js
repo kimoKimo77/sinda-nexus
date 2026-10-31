@@ -17,8 +17,8 @@ async function inTenantTransaction(pool, identity, projectId, callback) {
   } finally { client.release(); }
 }
 
-function requireIdentity(auth, request) {
-  const identity = auth.authenticate(request);
+async function requireIdentity(auth, request) {
+  const identity = await auth.authenticate(request);
   if (!identity) {
     const error = new Error("Authentication required.");
     error.status = 401;
@@ -49,7 +49,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
     async login(body) { return auth.login(body); },
 
     async me(request) {
-      const identity = requireIdentity(auth,request);
+      const identity = await requireIdentity(auth,request);
       return inTenantTransaction(pool,identity,null,async client => {
         const result = await client.query(
           "SELECT id,email,display_name,role FROM users WHERE id=$1 AND organization_id=$2 AND active=true LIMIT 1",
@@ -66,7 +66,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
     },
 
     async projects(request) {
-      const identity=requireIdentity(auth,request);
+      const identity=await requireIdentity(auth,request);
       return inTenantTransaction(pool,identity,null,async client => {
         const result=await client.query(
           `SELECT p.id,p.name,p.description,p.status,p.created_at,pm.role
@@ -79,7 +79,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
     },
 
     async dashboard(request, projectId) {
-      const identity=requireIdentity(auth,request);
+      const identity=await requireIdentity(auth,request);
       return inTenantTransaction(pool,identity,projectId,async client => {
         const role=await requireProjectRole(client,projectId,identity.sub,["owner","admin","member","viewer"]);
         const [agents,audit]=await Promise.all([
@@ -92,7 +92,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
     },
 
     async agents(request, projectId) {
-      const identity=requireIdentity(auth,request);
+      const identity=await requireIdentity(auth,request);
       return inTenantTransaction(pool,identity,projectId,async client => {
         await requireProjectRole(client,projectId,identity.sub,["owner","admin","member","viewer"]);
         const result=await client.query(
@@ -104,7 +104,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
     },
 
     async createAgent(request, projectId, body) {
-      const identity=requireIdentity(auth,request);
+      const identity=await requireIdentity(auth,request);
       const name=typeof body?.name==="string" ? body.name.trim() : "";
       const type=body?.agentType;
       if (!name || name.length>120 || !["planner","auditor","builder","analyst"].includes(type)) {

@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { DASHBOARD_HTML } from "../dashboard/page.js";
 import { DASHBOARD_CLIENT_JS } from "../dashboard/client-asset.js";
+import { INVESTMENT_HTML } from "../investment/page.js";
+import { INVESTMENT_CLIENT_JS } from "../investment/client.js";
 
 export const PREVIEW_MODULES = Object.freeze([
   { id: "project-factory", name: "Commercial project factory", status: "planned", mode: "preview" },
@@ -51,7 +53,7 @@ async function readJson(request, maxBytes) {
 
 export function createSindaHttpServer({
   healthChecks = {}, modules = PREVIEW_MODULES, maxRequestsPerMinute = 120,
-  dashboard, maxBodyBytes = 16_384
+  dashboard, investment, maxBodyBytes = 16_384
 } = {}) {
   const requests=[];
   return createServer(async (request,response) => {
@@ -84,6 +86,39 @@ export function createSindaHttpServer({
         response.end(body);
         return;
       }
+      if(pathname==="/investment" && request.method==="GET") {
+        const body=INVESTMENT_HTML;
+        response.writeHead(200,{"content-type":"text/html; charset=utf-8","content-length":Buffer.byteLength(body),"cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","content-security-policy":"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"});
+        response.end(body);
+        return;
+      }
+      if(pathname==="/investment.js" && request.method==="GET") {
+        const body=INVESTMENT_CLIENT_JS;
+        response.writeHead(200,{"content-type":"text/javascript; charset=utf-8","content-length":Buffer.byteLength(body),"cache-control":"no-store","x-content-type-options":"nosniff","content-security-policy":"default-src 'none'; script-src 'self'"});
+        response.end(body);
+        return;
+      }
+      if(pathname.startsWith("/api/v1/investment/")) {
+        if(request.method!=="GET") {
+          sendJson(response,405,{error:"read_only_endpoint",requestId});
+          return;
+        }
+        if(!investment) {
+          sendJson(response,503,{error:"investment_service_not_configured",requestId});
+          return;
+        }
+        if(pathname==="/api/v1/investment/markets") {
+          sendJson(response,200,{...await investment.markets(request),requestId});
+          return;
+        }
+        const marketMatch=pathname.match(/^\/api\/v1\/investment\/markets\/([a-z-]+)$/);
+        if(marketMatch) {
+          sendJson(response,200,{...await investment.snapshot(request,marketMatch[1]),requestId});
+          return;
+        }
+        sendJson(response,404,{error:"not_found",requestId});
+        return;
+      }
       if(pathname==="/healthz" && ["GET","HEAD"].includes(request.method)) {
         sendJson(response,200,{status:"ok",service:"sinda-sovereign-preview",requestId});
         return;
@@ -105,7 +140,7 @@ export function createSindaHttpServer({
         },requestId});
         return;
       }
-      if(["/healthz","/readyz","/api/v1/modules","/dashboard","/dashboard.js"].includes(pathname)) {
+      if(["/healthz","/readyz","/api/v1/modules","/dashboard","/dashboard.js","/investment","/investment.js"].includes(pathname)) {
         sendJson(response,405,{error:"method_not_allowed",requestId});
         return;
       }

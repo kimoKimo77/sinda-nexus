@@ -1,0 +1,68 @@
+name: Smart Investment Preview PostgreSQL
+
+on:
+  push:
+    branches:
+      - feat/smart-investment-readonly-preview
+  pull_request:
+    branches:
+      - feat/sinda-smart-server-preview
+    paths:
+      - "src/investment/**"
+      - "src/db/migrations.js"
+      - "src/application.js"
+      - "src/server/http.js"
+      - "test/**"
+      - ".github/workflows/smart-investment-preview.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-preview:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-test-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      SINDA_PG_TEST_URL: postgresql://sinda_preview_runner:preview-test-only@localhost:5432/sinda_preview_test
+      SINDA_PG_TENANT_TEST_URL: postgresql://sinda_migration_owner:migration-test-only@localhost:5432/sinda_tenant_rls_test
+      SINDA_PG_RUNTIME_TEST_URL: postgresql://sinda_runtime:runtime-test-only@localhost:5432/sinda_tenant_rls_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Install disposable PostgreSQL test driver
+        run: npm install --no-save --package-lock=false pg
+      - name: Create isolated databases and least-privilege roles
+        run: |
+          PGPASSWORD=postgres-test-only psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE sinda_preview_runner LOGIN PASSWORD 'preview-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+          CREATE DATABASE sinda_preview_test OWNER sinda_preview_runner;
+          CREATE ROLE sinda_migration_owner LOGIN PASSWORD 'migration-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+          CREATE ROLE sinda_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+          CREATE DATABASE sinda_tenant_rls_test OWNER sinda_migration_owner;
+          GRANT CONNECT ON DATABASE sinda_tenant_rls_test TO sinda_runtime;
+          ALTER DEFAULT PRIVILEGES FOR ROLE sinda_migration_owner IN SCHEMA public GRANT SELECT ON TABLES TO sinda_runtime;
+          ALTER DEFAULT PRIVILEGES FOR ROLE sinda_migration_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO sinda_runtime;
+          SQL
+          PGPASSWORD=migration-test-only psql -h localhost -U sinda_migration_owner -d sinda_tenant_rls_test -v ON_ERROR_STOP=1 -c "GRANT USAGE ON SCHEMA public TO sinda_runtime;"
+      - name: Run unit and live PostgreSQL integration tests
+        run: npm test
