@@ -1,0 +1,91 @@
+import { INVESTMENT_MARKETS, INVESTMENT_RESTRICTIONS } from "./catalog.js";
+
+function requireIdentity(auth, request) {
+  const identity = auth?.authenticate?.(request);
+  if (!identity) {
+    const error = new Error("Authentication required.");
+    error.status = 401;
+    throw error;
+  }
+  return identity;
+}
+
+function safeSnapshot(snapshot, market) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    throw new TypeError("Market data provider returned an invalid snapshot.");
+  }
+  if (snapshot.market !== market || typeof snapshot.asOf !== "string" || typeof snapshot.source !== "string") {
+    throw new TypeError("Market data provider omitted required provenance fields.");
+  }
+  if (!Array.isArray(snapshot.items)) throw new TypeError("Market data provider must return an items array.");
+  return {
+    market,
+    asOf: snapshot.asOf,
+    source: snapshot.source.slice(0, 120),
+    items: snapshot.items.slice(0, 100).map(item => {
+      if (!item || typeof item.symbol !== "string" || typeof item.name !== "string") {
+        throw new TypeError("Market data provider returned an invalid item.");
+      }
+      const price = item.price === null || item.price === undefined ? null : Number(item.price);
+      if (price !== null && (!Number.isFinite(price) || price < 0)) {
+        throw new TypeError("Market data provider returned an invalid price.");
+      }
+      return {
+        symbol: item.symbol.slice(0, 32),
+        name: item.name.slice(0, 120),
+        price,
+        currency: typeof item.currency === "string" ? item.currency.slice(0, 8) : null,
+        changePercent: Number.isFinite(Number(item.changePercent)) ? Number(item.changePercent) : null
+      };
+    })
+  };
+}
+
+export function createInvestmentReadHandlers({ auth, marketDataProvider = null } = {}) {
+  if (!auth || typeof auth.authenticate !== "function") {
+    throw new TypeError("An authentication service is required.");
+  }
+  return {
+    async markets(request) {
+      const identity = requireIdentity(auth, request);
+      return {
+        userId: identity.sub,
+        mode: "read-only",
+        markets: INVESTMENT_MARKETS,
+        restrictions: INVESTMENT_RESTRICTIONS
+      };
+    },
+    async snapshot(request, marketId) {
+      requireIdentity(auth, request);
+      const market = INVESTMENT_MARKETS.find(item => item.id === marketId);
+      if (!market) {
+        const error = new Error("Unknown market.");
+        error.status = 404;
+        throw error;
+      }
+      if (!marketDataProvider || typeof marketDataProvider.getSnapshot !== "function") {
+        return {
+          market: marketId,
+          status: "unavailable",
+          data: null,
+          reason: "market_data_provider_not_configured",
+          message: "لم يتم ربط مصدر بيانات سوق موثوق بعد؛ لا تُعرض أسعار تجريبية على أنها أسعار حقيقية."
+        };
+      }
+      try {
+        return {
+          market: marketId,
+          status: "available",
+          data: safeSnapshot(await marketDataProvider.getSnapshot(marketId), marketId)
+        };
+      } catch {
+        return {
+          market: marketId,
+          status: "unavailable",
+          data: null,
+          reason: "market_data_provider_error"
+        };
+      }
+    }
+  };
+}
