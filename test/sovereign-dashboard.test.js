@@ -70,7 +70,9 @@ test("login returns a signed session and generic errors for invalid credentials"
   }]:[]})};
   const auth=createAuthService({pool,sessionSecret:"s".repeat(48)});
   const result=await auth.login({email:"OWNER@example.test",password:"correct-horse-battery-staple"});
-  assert.equal((await auth.authenticate({headers:{authorization:"Bearer "+result.token}})).sub,"user-1");
+  const identity = await auth.authenticate({headers:{authorization:"Bearer "+result.token}});
+  assert.equal(identity?.sub,"user-1");
+  assert.equal(identity?.role,"owner");
   await assert.rejects(()=>auth.login({email:"owner@example.test",password:"wrong-password"}),/Invalid email or password/);
 });
 
