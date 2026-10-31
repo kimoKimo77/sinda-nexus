@@ -119,7 +119,11 @@ export class AgentRegistry {
     return agent;
   }
 
-  get(id) { return this.#agents.get(id) ?? null; }
+  get(id, projectId) {
+    this.#validateIdentity(id, projectId);
+    const agent = this.#agents.get(id);
+    return agent?.projectId === projectId ? agent : null;
+  }
 
   list({ projectId } = {}) {
     if (typeof projectId !== "string" || !ID.test(projectId)) throw new TypeError("A valid project scope is required");
