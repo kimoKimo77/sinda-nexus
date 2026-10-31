@@ -62,6 +62,27 @@ A 100% checklist is not a guarantee of funding and does not constitute investmen
 - Investor-facing exports must include source dates, assumptions, unresolved risks, and a review status.
 - This branch is a Preview foundation. Durable persistence, authenticated tenant scoping, UI, and external-source connectors remain separate gated work.
 
+
+## Prior-context projects awaiting source verification
+
+The following names appeared in earlier project discussions but are not part of the five-repository GitHub inventory above. They are retained as `external_unverified` records until their original source is connected and inspected; their inclusion does not assert that a working implementation exists:
+
+- **UBS Digital Cash Enterprise Manager & Cryptographic Suite** — Google Sites project; previously described as unpublished during the October 2026 review.
+- **Quantum Hex Pro** — web Preview concept with a payment/rewards scope; no real wallet connection or financial operation is authorized.
+- **Bitcoin OP_RETURN Analyzer** — educational/forensic analysis tool; the prior work included an HTML decoder mockup, not proof of a completed application.
+- **Sinda Core App** — Google AI Studio app URL was supplied, but its source and relationship to Sinda Nexus have not been verified. Do not assume it is the same project as Vision Digital.
+- **Gemini project library inventory** — a source collection/workstream for cataloging documents and attachments; automatic import or file movement is not authorized.
+- **HSBC Open Banking read-only service** — earlier Node.js/Saudi-context concept restricted to official sandbox/test data and read-only account/balance access; no live banking connection is authorized.
+
+## Important delivery gaps to validate
+
+- Cross-platform source connectors and evidence-backed import for GitHub, Google AI Studio, Google Sites, Gemini/Drive, and hosting workspaces.
+- A portfolio web dashboard with Arabic/RTL support, search, filters, project detail, status timeline, dependencies, and evidence links.
+- A governed project development workflow that converts approved gaps into milestones, tests, reviewable pull requests, and release gates.
+- An investor data room/export with a pitch outline, market evidence, demo, business model, unit economics, risks, IP/legal status, and dated financial assumptions. No investor outreach is included.
+
+These are gaps in the current Project Intelligence foundation, not claims that the user has no equivalent work elsewhere.
+
 ## Verification
 
 Run `npm test` and `npm run check` in the repository. The module is pure and deterministic; it performs no network calls and has no write capability.
