@@ -7,3 +7,10 @@ export { SindaOrchestrator } from "./orchestrator.js";
 export { PlanEvaluator, validateEvaluation } from "./evaluator.js";
 export { createWorkspaceTaskExecutor } from "./workspace-task-executor.js";
 export { createSindaAI } from "./runtime.js";
+export {
+  validateProject,
+  scoreProjectPriority,
+  assessInvestorReadiness,
+  findPotentialDuplicates,
+  buildPortfolioSnapshot
+} from "../project-intelligence/portfolio.js";

@@ -1,0 +1,103 @@
+{
+  "inventoryScope": "Five repositories returned by the connected GitHub account on 2026-10-31; external records are prior-context references and remain unverified.",
+  "confirmedProjects": [
+    {
+      "id": "sinda-nexus",
+      "name": "Sinda Nexus",
+      "description": "Unified platform foundation for project and document management, AI planning, security reviews, and reporting.",
+      "repository": "https://github.com/kimoKimo77/sinda-nexus",
+      "category": "portfolio-platform",
+      "status": "in_progress",
+      "stage": "prototype",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": [],
+      "risks": ["Current portfolio module is a Preview domain foundation; authenticated persistence and UI are not yet established."]
+    },
+    {
+      "id": "marketmaster-ai",
+      "name": "MarketMaster AI",
+      "description": "AI-driven warehouse simulation concept with Three.js, autonomous robot pathfinding, shipment tracking, and a 3D logistics environment.",
+      "repository": "https://github.com/kimoKimo77/marketmaster-ai",
+      "category": "logistics-simulation",
+      "status": "planned",
+      "stage": "prototype",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": [],
+      "risks": ["Current README is brief; implementation maturity and commercial validation require further inspection."]
+    },
+    {
+      "id": "vision-digital",
+      "name": "Vision Digital",
+      "description": "Arabic RTL digital services website with responsive pages, authentication UI, and an AWS deployment workflow requiring configuration review.",
+      "repository": "https://github.com/kimoKimo77/vision-digital",
+      "category": "digital-services",
+      "status": "in_progress",
+      "stage": "prototype",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": [],
+      "risks": ["Supabase RLS and production auth require separate verification; AWS workflow expects artifacts not currently described in README."]
+    },
+    {
+      "id": "kiom",
+      "name": "kiom",
+      "description": "Lightweight browser-based task and project productivity product for individuals and small teams.",
+      "repository": "https://github.com/kimoKimo77/kiom",
+      "category": "productivity-saas",
+      "status": "planned",
+      "stage": "concept",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": [],
+      "risks": ["README defines scope and acceptance criteria; it does not establish a working MVP or customer validation."]
+    },
+    {
+      "id": "scalar-docs-starter",
+      "name": "Scalar Docs Starter Kit",
+      "description": "Documentation starter for MDX and OpenAPI with local preview and configuration validation.",
+      "repository": "https://github.com/kimoKimo77/demo-api-scalar-galaxy-docs",
+      "category": "developer-documentation",
+      "status": "in_progress",
+      "stage": "prototype",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": [],
+      "risks": ["Starter-kit status and ownership of upstream template components should be reviewed before commercial packaging."]
+    },
+    {
+      "id": "sinda-robotics-factory",
+      "name": "SINDA Robotics Factory",
+      "description": "Digital-only virtual robot design and synthetic locomotion simulation workstream in Sinda Nexus PR #10.",
+      "repository": null,
+      "category": "robotics-simulation",
+      "status": "preview",
+      "stage": "prototype",
+      "sourceConfidence": "verified",
+      "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
+      "evidence": [],
+      "dependencies": ["sinda-nexus"],
+      "risks": ["Simulation metrics are proxies, not physical measurements; no hardware control or wet-lab work is in scope."]
+    }
+  ],
+  "externalUnverified": [
+    { "id": "ubs-digital-cash", "name": "UBS Digital Cash Enterprise Manager & Cryptographic Suite", "source": "Google Sites", "status": "external_unverified", "stage": "concept", "verificationRequired": "Inspect the original site and current unpublished/published state." },
+    { "id": "quantum-hex-pro", "name": "Quantum Hex Pro", "source": "Prior Preview design discussion", "status": "external_unverified", "stage": "concept", "verificationRequired": "Locate source repository and inspect implementation; preserve no-live-wallet/no-financial-operation constraints." },
+    { "id": "bitcoin-op-return-analyzer", "name": "Bitcoin OP_RETURN Analyzer", "source": "Prior HTML mockup and project discussion", "status": "external_unverified", "stage": "concept", "verificationRequired": "Locate source files and verify parser, tests, and read-only data boundaries." },
+    { "id": "sinda-core-app", "name": "Sinda Core App", "source": "Google AI Studio", "status": "external_unverified", "stage": "concept", "verificationRequired": "Inspect source and establish relationship, if any, to Sinda Nexus." },
+    { "id": "gemini-project-library", "name": "Gemini Project Library Inventory", "source": "Gemini Library / prior inventory request", "status": "external_unverified", "stage": "discovery", "verificationRequired": "Read-only inventory of files and attachments; no automatic import, movement, or deletion." },
+    { "id": "hsbc-open-banking-readonly", "name": "HSBC Open Banking Read-only Service", "source": "Prior Node.js/Saudi sandbox project request", "status": "external_unverified", "stage": "concept", "verificationRequired": "Inspect repository and verify official sandbox-only, read-only scope." }
+  ],
+  "proposedGaps": [
+    { "id": "portfolio-dashboard", "name": "Portfolio Dashboard", "status": "proposed", "priority": "high", "reason": "The domain module exists, but no integrated project portfolio UI is included yet." },
+    { "id": "investor-data-room", "name": "Investor Data Room", "status": "proposed", "priority": "high", "reason": "Evidence checklist exists; investor-facing export, pitch pack, and source-linked evidence room remain to be built." },
+    { "id": "cross-platform-connectors", "name": "Cross-platform Project Connectors", "status": "proposed", "priority": "high", "reason": "Current confirmed inventory covers GitHub only; Google AI Studio, Google Sites, Gemini/Drive, and hosting sources are not connected here." },
+    { "id": "project-delivery-cockpit", "name": "Project Delivery Cockpit", "status": "proposed", "priority": "medium", "reason": "A cross-project milestone, blocker, dependency, and test-evidence view is not yet implemented." }
+  ]
+}
