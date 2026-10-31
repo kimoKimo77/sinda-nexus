@@ -1,4 +1,4 @@
-export const INVESTMENT_CLIENT_JS = String.raw`(() => {
+export const INVESTMENT_CLIENT_JS = String.raw\`(() => {
   let token = null;
   const login = document.getElementById("login");
   const workspace = document.getElementById("workspace");
@@ -16,6 +16,7 @@ export const INVESTMENT_CLIENT_JS = String.raw`(() => {
     const response = await fetch(path, {
       method: options.method || "GET",
       headers: { ...(token ? {authorization:"Bearer " + token} : {}), ...(options.headers || {}) },
+      body: options.body,
       cache: "no-store"
     });
     const body = await response.json().catch(() => ({}));
@@ -62,4 +63,4 @@ export const INVESTMENT_CLIENT_JS = String.raw`(() => {
     login.classList.remove("hidden");
     error.textContent = "تم إنهاء جلسة العرض.";
   });
-})();`;
+})();\`;
