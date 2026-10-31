@@ -116,7 +116,23 @@ test("oversized or malformed JSON bodies are rejected",async()=>{
   });
 });
 
-test("readiness is not reported when no dependency checks are configured",async()=>{\n  await withServer({},async base=>{\n    const response=await fetch(base+"/readyz");\n    assert.equal(response.status,503);\n    assert.equal((await response.json()).status,"not_ready");\n  });\n});\n\ntest("readiness requires every configured dependency check to pass",async()=>{\n  await withServer({healthChecks:{postgres:async()=>true,cache:async()=>false}},async base=>{\n    const response=await fetch(base+"/readyz");\n    assert.equal(response.status,503);\n    assert.deepEqual((await response.json()).checks,{postgres:"ok",cache:"not_ready"});\n  });\n});\n\ntest("dashboard page and same-origin script are served with restrictive security headers",async()=>{
+test("readiness is not reported when no dependency checks are configured",async()=>{
+  await withServer({},async base=>{
+    const response=await fetch(base+"/readyz");
+    assert.equal(response.status,503);
+    assert.equal((await response.json()).status,"not_ready");
+  });
+});
+
+test("readiness requires every configured dependency check to pass",async()=>{
+  await withServer({healthChecks:{postgres:async()=>true,cache:async()=>false}},async base=>{
+    const response=await fetch(base+"/readyz");
+    assert.equal(response.status,503);
+    assert.deepEqual((await response.json()).checks,{postgres:"ok",cache:"not_ready"});
+  });
+});
+
+test("dashboard page and same-origin script are served with restrictive security headers",async()=>{
   await withServer({},async base=>{
     const page=await fetch(base+"/dashboard");
     assert.equal(page.status,200);
@@ -148,7 +164,8 @@ test("agent creation requires project role and enforces a per-project capacity l
     async query(sql){
       calls.push(sql);
       if(sql.includes("SELECT pm.role")) return {rows:[{role:membershipRole}]};
-      if(sql.includes("pg_advisory_xact_lock(hashtextextended")) return {rows:[]};\n      if(sql.includes("SELECT count(*)::int AS count FROM agents")) return {rows:[{count:agentCount}]};
+      if(sql.includes("pg_advisory_xact_lock(hashtextextended")) return {rows:[]};
+      if(sql.includes("SELECT count(*)::int AS count FROM agents")) return {rows:[{count:agentCount}]};
       if(sql.startsWith("INSERT INTO agents")) return {rows:[{id:"a1"}]};
       return {rows:[],rowCount:1};
     },
@@ -160,5 +177,6 @@ test("agent creation requires project role and enforces a per-project capacity l
   await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===403);
   membershipRole="member";agentCount=100;
   await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===429);
-  assert.equal(calls.some(sql=>sql.startsWith("INSERT INTO agents")),false);\n  assert.ok(calls.some(sql=>sql.includes("pg_advisory_xact_lock(hashtextextended")));
+  assert.equal(calls.some(sql=>sql.startsWith("INSERT INTO agents")),false);
+  assert.ok(calls.some(sql=>sql.includes("pg_advisory_xact_lock(hashtextextended")));
 });
