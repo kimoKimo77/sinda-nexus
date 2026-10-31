@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { performance } from "node:perf_hooks";
-import { AgentRegistry } from "../src/nano-neuro/agent-registry.js";
 import { VirtualSensorHub } from "../src/nano-neuro/neural-sensors.js";
 import { SwarmCoordinator } from "../src/nano-neuro/swarm.js";
 import { createSimulation, createVirtualPopulation } from "../src/nano-neuro/simulator.js";
@@ -61,7 +60,7 @@ test("staged load smoke: 100, 1000, 5000 and 10000 virtual agents", { timeout: 6
       });
     }
     const swarmMs = performance.now() - swarmStarted;
-    assert.equal(swarm.snapshot().length, target - 1);
+    assert.equal(swarm.snapshot({ projectId: `load-${target}` }).length, target - 1);
 
     const memoryAfter = process.memoryUsage();
     observations.push({
