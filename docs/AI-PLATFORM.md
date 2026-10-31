@@ -16,7 +16,7 @@ The planner validates a bounded task list and supported action set. The orchestr
 
 ## Database connector
 
-The connector accepts an injected database adapter and allow-listed table names. It permits one SELECT statement, rejects mutation/DDL keywords and comments, caps returned rows, and logs reads. Write requests create approval records only; no write SQL is executed by this module. The application must provide a least-privilege database identity, ideally a database-level read-only role.
+The connector includes thin adapters for an injected PostgreSQL pool and SQLite prepared statements. It accepts allow-listed table names, permits a single restricted SELECT, rejects mutation/DDL keywords, comments, sensitive catalog/file functions, and out-of-scope tables, clamps LIMIT to the configured row cap, and logs reads. Write requests create approval records only; no write SQL is executed by this module. The application must provide a least-privilege database identity, ideally a database-level read-only role.
 
 ## Approvals and audit
 
