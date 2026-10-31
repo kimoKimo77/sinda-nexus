@@ -1,12 +1,6 @@
 name: Publish static Preview to GitHub Pages
 
 on:
-  push:
-    branches:
-      - deploy/github-pages-preview
-    paths:
-      - "docs/**"
-      - ".github/workflows/github-pages-preview.yml"
   workflow_dispatch:
 
 permissions:
@@ -21,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,10 +28,8 @@ jobs:
             echo "Unexpected credential-like field found in public static page."
             exit 1
           fi
-      - name: Configure and enable GitHub Pages
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
