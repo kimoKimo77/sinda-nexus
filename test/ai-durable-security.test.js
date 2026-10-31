@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PersistentProjectMemory, PersistentApprovalLedger, durableSchema } from "../src/ai/database/durable-repositories.js";
 import { createAuthorizedHostHandlers, createUntrustedContextEnvelope } from "../src/ai/host-adapter.js";
+import { createWorkspaceTaskExecutor } from "../src/ai/workspace-task-executor.js";
 
 function fakeDb() {
   const tables = new Map();
@@ -62,6 +63,25 @@ test("host read/test/evaluate handlers require authenticated project-scoped auth
   assert.equal(await handlers.analyze({actor:"alice",projectId:"p1",task:{}}),"analysis-ok");
   await assert.rejects(()=>handlers.read({projectId:"p1",task:{}}),/authenticated actor/);
   assert.equal(calls.length,1);
+});
+
+test("authorized host handlers are connected to the workspace executor for read/test/evaluate", async () => {
+  const calls=[];
+  const handlers=createAuthorizedHostHandlers({
+    authorize:async ({actor,projectId,action})=>actor==="alice" && projectId==="p1" && ["read","test","evaluate"].includes(action),
+    handlers:{
+      read:async()=>{calls.push("read");return "read-ok";},
+      test:async()=>{calls.push("test");return "test-ok";},
+      evaluate:async()=>{calls.push("evaluate");return "evaluate-ok";}
+    }
+  });
+  const executor=createWorkspaceTaskExecutor({workspaceWriter:{write:async()=>({written:true})},handlers});
+  for (const action of ["read","test","evaluate"]) {
+    const output=await executor({projectId:"p1",actor:"alice",task:{id:action,action}});
+    assert.equal(output,action+"-ok");
+  }
+  await assert.rejects(()=>executor({projectId:"p2",actor:"alice",task:{action:"read"}}),/Permission denied/);
+  assert.deepEqual(calls,["read","test","evaluate"]);
 });
 
 test("untrusted prompt context remains data and cannot become a host handler or permission", () => {
