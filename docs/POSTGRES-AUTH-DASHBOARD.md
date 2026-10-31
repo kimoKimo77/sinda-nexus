@@ -7,6 +7,7 @@
 - PostgreSQL row-level security on projects, project memberships, agents and audit events. The application sets transaction-local `sinda.organization_id`, `sinda.user_id` and `sinda.project_id` values for each tenant request.
 - Scrypt password hashes and HMAC-signed, expiring bearer sessions. Public self-registration is not exposed.
 - One-time first-owner provisioning helper. It only succeeds while the users table is empty.
+- Arabic RTL Preview dashboard at `/dashboard`, served with a same-origin JavaScript asset and restrictive Content Security Policy.
 - Project list, project dashboard, agent list and agent creation handlers. Agents are created in `idle` state only; this API does not execute autonomous work.
 - Bounded JSON request bodies, request IDs, no-store responses and generic server errors.
 
