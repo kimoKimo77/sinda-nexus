@@ -1,0 +1,51 @@
+import { DecisionEngine } from "./decision-engine.js";
+import { TaskPlanner } from "./task-planner.js";
+
+export class SindaOrchestrator {
+  constructor({ provider, memory, executor, auditLog, decisionEngine = new DecisionEngine() } = {}) {
+    if (!provider || !memory || typeof executor !== "function") throw new TypeError("provider, project memory, and task executor are required.");
+    this.provider = provider;
+    this.memory = memory;
+    this.executor = executor;
+    this.auditLog = auditLog;
+    this.decisionEngine = decisionEngine;
+    this.planner = new TaskPlanner({ provider });
+  }
+
+  async plan({ projectId, goal, constraints = [] } = {}) {
+    const memories = await this.memory.search({ projectId, query: goal, limit: 12 });
+    const plan = await this.planner.createPlan({ goal, projectContext: memories, constraints });
+    await this.#audit({ event: "plan.created", projectId, taskCount: plan.tasks.length });
+    return { projectId, plan, memoryReferences: memories.map(item => item.id) };
+  }
+
+  async execute({ projectId, plan, actor = "system" } = {}) {
+    const results = [];
+    const completed = new Set();
+    for (const task of plan.tasks) {
+      const blockedBy = task.dependsOn.filter(id => !completed.has(id));
+      if (blockedBy.length) {
+        results.push({ taskId: task.id, status: "blocked", reason: "Dependencies not completed: " + blockedBy.join(", ") });
+        continue;
+      }
+      const decision = this.decisionEngine.decide({ action: task.action === "test" || task.action === "evaluate" ? "analyze" : task.action, target: task.id, risk: task.risk });
+      if (decision.decision !== "allow") {
+        results.push({ taskId: task.id, status: "approval_required", decision });
+        await this.#audit({ event: "task.held", projectId, taskId: task.id, actor, decision: decision.decision });
+        continue;
+      }
+      try {
+        const output = await this.executor({ projectId, task, actor });
+        completed.add(task.id);
+        results.push({ taskId: task.id, status: "completed", output });
+        await this.#audit({ event: "task.completed", projectId, taskId: task.id, actor });
+      } catch (error) {
+        results.push({ taskId: task.id, status: "failed", error: error.message });
+        await this.#audit({ event: "task.failed", projectId, taskId: task.id, actor, error: error.message });
+      }
+    }
+    return { projectId, results, completedCount: completed.size, totalCount: plan.tasks.length };
+  }
+
+  async #audit(entry) { if (typeof this.auditLog === "function") await this.auditLog({ ...entry, at: new Date().toISOString() }); }
+}
