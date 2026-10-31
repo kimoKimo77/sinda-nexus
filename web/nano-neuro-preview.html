@@ -3,26 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>SINDA NANO-NEURO GENESIS — Preview</title>
-<style>
-:root{font-family:system-ui,sans-serif;color:#e9eef7;background:#0c1220}*{box-sizing:border-box}body{margin:0;padding:24px;max-width:1100px;margin-inline:auto}.panel{background:#151f32;border:1px solid #30415d;border-radius:16px;padding:22px;margin:16px 0}.eyebrow{color:#8fb4ff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem}h1{font-size:clamp(1.8rem,5vw,3rem);margin:.35em 0}.muted{color:#aab8cc;line-height:1.6}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.stat{background:#0e1728;padding:16px;border-radius:12px}.value{font-size:1.8rem;font-weight:700}button{background:#8fb4ff;color:#07101e;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.bar{height:12px;background:#293a55;border-radius:20px;overflow:hidden;margin:12px 0}.bar span{display:block;height:100%;width:0;background:#8fb4ff;transition:width .2s}code{color:#b9d0ff}.notice{border-inline-start:3px solid #d8aa54;padding:10px 14px;background:#211d16;color:#f2d9a8}
-</style>
+<link rel="stylesheet" href="./nano-neuro-preview.css">
+<script src="./nano-neuro-preview.js" defer></script>
 </head>
 <body>
-<header><div class="eyebrow">Sinda Nexus · isolated preview</div><h1>NANO-NEURO GENESIS</h1><p class="muted">Adaptive virtual-agent orchestration · digital genomes · synthetic sensors</p></header>
-<section class="panel"><div class="stats">
-<div class="stat"><div class="muted">Platform</div><div class="value">WEB</div></div>
-<div class="stat"><div class="muted">Agent policy</div><div class="value">Adaptive</div></div>
-<div class="stat"><div class="muted">Genome</div><div class="value">Digital</div></div>
-<div class="stat"><div class="muted">Sensors</div><div class="value">Virtual</div></div>
-</div></section>
-<section class="panel"><h2>Virtual population preview</h2><p class="muted">A local browser-only counter demonstrates the requested simulation target. It does not start workers, contact services, or control physical systems.</p>
-<div class="value" id="count">0 / 10,000</div><div class="bar"><span id="progress"></span></div><button id="run" type="button">Simulate 10,000 virtual agent records</button><p class="muted" id="status" aria-live="polite">Idle — no agents created.</p></section>
-<section class="panel"><h2>Safety boundary</h2><p class="notice">Digital simulation only. No DNA, biological material, implants, medical devices, hardware, actuators, wallets, financial operations, or physical-world control.</p><p class="muted">Adaptive child creation in the service layer is approval-gated and quota-limited. This static browser preview is a UI demonstration, not a production service or benchmark.</p></section>
-<script>
-"use strict";
-const button=document.getElementById("run"),count=document.getElementById("count"),progress=document.getElementById("progress"),status=document.getElementById("status");
-button.addEventListener("click",()=>{button.disabled=true;status.textContent="Creating local virtual records…";let created=0;const batch=250;function step(){const end=Math.min(10000,created+batch);for(let i=created;i<end;i++){const virtualRecord={id:"agent-"+String(i+1).padStart(5,"0"),kind:"digital-simulation-only"};void virtualRecord;}created=end;count.textContent=created.toLocaleString()+" / 10,000";progress.style.width=(created/10000*100)+"%";if(created<10000){setTimeout(step,0)}else{status.textContent="Completed locally: 10,000 demonstration records. No external or physical actions.";button.disabled=false}}step()});
-</script>
+<header>
+  <div class="eyebrow">Sinda Nexus · isolated preview</div>
+  <h1>NANO-NEURO GENESIS</h1>
+  <p class="muted">Adaptive virtual-agent orchestration · digital genomes · synthetic sensors</p>
+</header>
+<section class="panel">
+  <div class="stats">
+    <div class="stat"><div class="muted">Platform</div><div class="value">WEB</div></div>
+    <div class="stat"><div class="muted">Agent policy</div><div class="value">Adaptive</div></div>
+    <div class="stat"><div class="muted">Genome</div><div class="value">Digital</div></div>
+    <div class="stat"><div class="muted">Sensors</div><div class="value">Virtual</div></div>
+  </div>
+</section>
+<section class="panel">
+  <h2>Virtual population preview</h2>
+  <p class="muted">A local browser-only counter demonstrates the requested simulation target. It does not start workers, contact services, or control physical systems.</p>
+  <div class="value" id="count">0 / 10,000</div>
+  <div class="bar" role="progressbar" aria-label="Local demonstration progress" aria-valuemin="0" aria-valuemax="10000" aria-valuenow="0"><span id="progress"></span></div>
+  <button id="run" type="button">Simulate 10,000 virtual agent records</button>
+  <p class="muted" id="status" aria-live="polite">Idle — no agents created.</p>
+</section>
+<section class="panel">
+  <h2>Safety boundary</h2>
+  <p class="notice">Digital simulation only. No DNA, biological material, implants, medical devices, hardware, actuators, wallets, financial operations, or physical-world control.</p>
+  <p class="muted">Adaptive child creation in the service layer requires a trusted host-side approval verifier and is quota-limited. This static browser preview is a UI demonstration, not a production service or benchmark.</p>
+</section>
 </body>
 </html>
