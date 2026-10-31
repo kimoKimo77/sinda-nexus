@@ -6,6 +6,9 @@ import { validatePlan } from "../src/ai/task-planner.js";
 import { ApprovalLedger } from "../src/ai/approval-ledger.js";
 import { DatabaseConnector } from "../src/ai/database/connector.js";
 import { SindaOrchestrator } from "../src/ai/orchestrator.js";
+import { PlanEvaluator } from "../src/ai/evaluator.js";
+import { createWorkspaceTaskExecutor } from "../src/ai/workspace-task-executor.js";
+import { createSindaAI } from "../src/ai/runtime.js";
 
 test("provider validates endpoint and parses structured JSON", async () => {
   assert.throws(() => new GenerativeProvider({ endpoint: "http://example.com", model: "test" }), /HTTPS/);
@@ -31,6 +34,7 @@ test("planner validates tasks and rejects unsupported or out-of-order dependenci
     { id: "a", action: "read", description: "Read", dependsOn: ["b"] },
     { id: "b", action: "read", description: "Read dependency" }
   ] }), /ordered/);
+  assert.throws(() => validatePlan({ tasks: [{ id: "w", action: "write", description: "Write" }] }), /targetPath/);
 });
 
 test("approval ledger records, binds, and consumes approval once", async () => {
@@ -65,18 +69,56 @@ test("database connector scopes SELECT, caps rows, and queues writes for approva
   assert.equal(calls, 2);
 });
 
-test("orchestrator plans from scoped memory and executes only allowed tasks", async () => {
+test("workspace executor routes writes only through the guarded writer", async () => {
+  const writes = [];
+  const executor = createWorkspaceTaskExecutor({
+    workspaceWriter: { write: async (...args) => { writes.push(args); return { written: true }; } },
+    handlers: { analyze: async () => "analysis" }
+  });
+  await executor({ projectId: "p", actor: "user", task: { action: "write", targetPath: "notes/a.md", content: "safe", risk: "low" } });
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0][0], "notes/a.md");
+  assert.equal(await executor({ projectId: "p", actor: "user", task: { action: "analyze" } }), "analysis");
+  await assert.rejects(() => executor({ task: { action: "read" } }), /No trusted handler/);
+});
+
+test("plan evaluator validates model scores and evidence fields", async () => {
+  const evaluator = new PlanEvaluator({ provider: { generateJSON: async () => ({ score: 92, passed: true, findings: ["Tests passed"], nextSteps: [] }) } });
+  assert.equal((await evaluator.evaluate({ goal: "Build feature", plan: {}, execution: {} })).score, 92);
+  const invalid = new PlanEvaluator({ provider: { generateJSON: async () => ({ score: 120, passed: true }) } });
+  await assert.rejects(() => invalid.evaluate({ goal: "x", plan: {}, execution: {} }), /score/);
+});
+
+test("runtime factory wires provider, approvals, database, orchestrator, and evaluator", () => {
+  const runtime = createSindaAI({
+    env: { SINDA_LLM_ENDPOINT: "https://llm.example/v1/chat/completions", SINDA_LLM_MODEL: "test" },
+    fetchImpl: async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: "{}" } }] }) }),
+    executor: async () => "ok",
+    databaseAdapter: { query: async () => [] },
+    allowedTables: ["projects"]
+  });
+  assert.ok(runtime.provider);
+  assert.ok(runtime.approvals);
+  assert.ok(runtime.database);
+  assert.ok(runtime.orchestrator);
+  assert.ok(runtime.evaluator);
+});
+
+test("orchestrator plans from scoped memory, gates execution, and evaluates results", async () => {
   const memory = new InMemoryProjectMemory();
   await memory.remember({ projectId: "p1", content: "Use mock providers and preview only" });
-  const provider = { generateJSON: async () => ({ summary: "Plan", tasks: [
-    { id: "a", action: "analyze", description: "Inspect code", dependsOn: [], risk: "low" },
-    { id: "b", action: "write", description: "Write report", dependsOn: ["a"], risk: "high" }
-  ] }) };
+  const provider = { generateJSON: async ({ system }) => system.startsWith("Evaluate")
+    ? ({ score: 90, passed: true, findings: ["Evidence confirms completion"], nextSteps: [] })
+    : ({ summary: "Plan", tasks: [
+      { id: "a", action: "analyze", description: "Inspect code", dependsOn: [], risk: "low" },
+      { id: "b", action: "write", description: "Write report", targetPath: "reports/result.md", content: "# Result", dependsOn: ["a"], risk: "high" }
+    ] }) };
   const executed = [];
   const engine = new SindaOrchestrator({ provider, memory, executor: async ({ task }) => { executed.push(task.id); return "ok"; } });
   const plan = await engine.plan({ projectId: "p1", goal: "inspect code" });
   const result = await engine.execute({ projectId: "p1", plan: plan.plan, actor: "owner" });
   assert.deepEqual(executed, ["a"]);
   assert.equal(result.results[1].status, "approval_required");
+  assert.equal((await engine.evaluate({ goal: "inspect code", plan: plan.plan, execution: result })).passed, true);
   await assert.rejects(() => engine.execute({ projectId: "p1", plan: { tasks: [{ id: "x", action: "deploy", description: "Run" }] } }), /Unsupported/);
 });
