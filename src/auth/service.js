@@ -88,6 +88,7 @@ export async function provisionFirstOwner({ pool, email, password, displayName, 
   const organizationId=randomUUID(), userId=randomUUID(), projectId=randomUUID();
   try {
     await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock($1)",[741923605]);
     const count=await client.query("SELECT count(*)::int AS count FROM users");
     if (count.rows[0].count!==0) throw new Error("Initial owner provisioning is only available when the users table is empty.");
     await client.query("INSERT INTO organizations(id,name) VALUES($1,$2)",[organizationId,String(organizationName||"SINDA Workspace").slice(0,160)]);
