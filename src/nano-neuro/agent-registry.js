@@ -103,15 +103,26 @@ export class AgentRegistry {
     if (requested.some(capability => !parent.capabilities.includes(capability))) throw new Error("Child cannot escalate parent capabilities");
     if (!this.#verifySpawnApproval) throw new Error("No trusted spawn approval verifier is configured");
     const ticket = cleanApproval(approval);
+    const safeGenome = cleanGenome(genome);
     const context = Object.freeze({
-      approval: ticket, parent, childId: id, projectId, capabilities: Object.freeze(requested)
+      action: "agent.spawn",
+      approval: ticket,
+      parent,
+      childId: id,
+      projectId,
+      capabilities: Object.freeze(requested)
     });
-    if (this.#verifySpawnApproval(context) !== true) throw new Error("Trusted spawn approval was not verified");
+    const verdict = this.#verifySpawnApproval(context);
+    if (verdict && typeof verdict.then === "function") {
+      Promise.resolve(verdict).catch(() => {});
+      throw new TypeError("Spawn approval verifier must be synchronous");
+    }
+    if (verdict !== true) throw new Error("Trusted spawn approval was not verified");
 
     const agent = Object.freeze({
       id, projectId, parentId, depth,
       capabilities: Object.freeze(requested),
-      genome: cleanGenome(genome)
+      genome: safeGenome
     });
     this.#agents.set(id, agent);
     this.#childCounts.set(id, 0);
