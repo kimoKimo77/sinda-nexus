@@ -102,18 +102,31 @@ test("virtual sensors accept only registered agents in the matching project", ()
   assert.equal(sensors.count("agent-a", "alpha"), 2);
 });
 
-test("swarm delegation validates quotas, indexes counts and enforces project scope", () => {
+test("swarm delegation isolates task IDs, quotas and snapshots by project", () => {
   const registry = new AgentRegistry();
   registry.createRoot({ id: "root", projectId: "p", capabilities: ["analyze"] });
-  const swarm = new SwarmCoordinator({ registry, maxTasks: 2, maxTasksPerAgent: 1 });
+  registry.createRoot({ id: "root-p2", projectId: "p", capabilities: ["analyze"] });
+  registry.createRoot({ id: "root-p3", projectId: "p", capabilities: ["analyze"] });
+  registry.createRoot({ id: "root-q", projectId: "q", capabilities: ["analyze"] });
+  const swarm = new SwarmCoordinator({
+    registry, maxTasks: 4, maxTasksPerProject: 2, maxTasksPerAgent: 1
+  });
   assert.throws(() => new SwarmCoordinator({ registry, maxTasks: 0 }), /quota/);
-  assert.throws(() => swarm.delegate({ taskId: "x", projectId: "p", agentId: "root", action: "delete" }), /authorized/);
-  assert.throws(() => swarm.delegate({ taskId: "x", projectId: "other", agentId: "root", action: "analyze" }), /scope/);
-  swarm.delegate({ taskId: "x", projectId: "p", agentId: "root", action: "analyze" });
-  assert.throws(() => swarm.delegate({ taskId: "y", projectId: "p", agentId: "root", action: "analyze" }), /quota/);
-  assert.throws(() => swarm.delegate({ taskId: "x", projectId: "p", agentId: "root", action: "analyze" }), /duplicate/);
-});
+  assert.throws(() => new SwarmCoordinator({ registry, maxTasks: 3, maxTasksPerProject: 0 }), /project task quota/);
+  assert.throws(() => swarm.delegate({ taskId: "bad", projectId: "p", agentId: "root", action: "delete" }), /authorized/);
+  assert.throws(() => swarm.delegate({ taskId: "bad", projectId: "q", agentId: "root", action: "analyze" }), /scope/);
 
+  swarm.delegate({ taskId: "shared", projectId: "p", agentId: "root", action: "analyze" });
+  assert.throws(() => swarm.delegate({ taskId: "agent-limit", projectId: "p", agentId: "root", action: "analyze" }), /quota/);
+  swarm.delegate({ taskId: "project-second", projectId: "p", agentId: "root-p2", action: "analyze" });
+  assert.throws(() => swarm.delegate({ taskId: "project-third", projectId: "p", agentId: "root-p3", action: "analyze" }), /Project task quota/);
+
+  // Identical task IDs are isolated by project, and snapshots require an explicit project scope.
+  swarm.delegate({ taskId: "shared", projectId: "q", agentId: "root-q", action: "analyze" });
+  assert.throws(() => swarm.snapshot(), /project scope/);
+  assert.deepEqual(swarm.snapshot({ projectId: "p" }).map(task => task.taskId), ["shared", "project-second"]);
+  assert.deepEqual(swarm.snapshot({ projectId: "q" }).map(task => task.taskId), ["shared"]);
+});
 test("fusion resolves sources from registry and applies same-project intersection", () => {
   const registry = new AgentRegistry();
   registry.createRoot({ id: "a", projectId: "p", capabilities: ["analyze", "simulate"] });
