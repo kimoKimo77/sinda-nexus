@@ -20,7 +20,7 @@ export class SwarmCoordinator {
     if (typeof taskId !== "string" || !/^[a-zA-Z0-9._:-]{1,64}$/.test(taskId) || this.#assignments.has(taskId)) {
       throw new Error("Invalid or duplicate task");
     }
-    const agent = this.#registry.get(agentId);
+    const agent = this.#registry.get(agentId, projectId);
     if (!agent || agent.projectId !== projectId) throw new Error("Agent is outside project scope");
     if (!ACTIONS.has(action) || !agent.capabilities.includes(action)) throw new Error("Task action is not authorized");
     if (!Number.isSafeInteger(budget) || budget < 1 || budget > 100) throw new RangeError("Task budget must be between 1 and 100");
