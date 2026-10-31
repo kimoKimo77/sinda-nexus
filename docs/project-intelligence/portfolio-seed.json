@@ -11,7 +11,7 @@
       "stage": "prototype",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "prototype_demo", "reference": "https://github.com/kimoKimo77/sinda-nexus", "verified": true }],
+      "evidence": [],
       "dependencies": [],
       "risks": ["Current portfolio module is a Preview domain foundation; authenticated persistence and UI are not yet established."]
     },
@@ -25,7 +25,7 @@
       "stage": "prototype",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "prototype_demo", "reference": "https://github.com/kimoKimo77/marketmaster-ai", "verified": true }],
+      "evidence": [],
       "dependencies": [],
       "risks": ["Current README is brief; implementation maturity and commercial validation require further inspection."]
     },
@@ -39,7 +39,7 @@
       "stage": "prototype",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "prototype_demo", "reference": "https://github.com/kimoKimo77/vision-digital", "verified": true }],
+      "evidence": [],
       "dependencies": [],
       "risks": ["Supabase RLS and production auth require separate verification; AWS workflow expects artifacts not currently described in README."]
     },
@@ -53,7 +53,7 @@
       "stage": "concept",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "problem_validation", "reference": "https://github.com/kimoKimo77/kiom", "verified": true }],
+      "evidence": [],
       "dependencies": [],
       "risks": ["README defines scope and acceptance criteria; it does not establish a working MVP or customer validation."]
     },
@@ -67,7 +67,7 @@
       "stage": "prototype",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "prototype_demo", "reference": "https://github.com/kimoKimo77/demo-api-scalar-galaxy-docs", "verified": true }],
+      "evidence": [],
       "dependencies": [],
       "risks": ["Starter-kit status and ownership of upstream template components should be reviewed before commercial packaging."]
     },
@@ -81,7 +81,7 @@
       "stage": "prototype",
       "sourceConfidence": "verified",
       "priority": { "userImpact": 0, "strategicFit": 0, "readiness": 0, "urgency": 0, "evidenceStrength": 0 },
-      "evidence": [{ "type": "prototype_demo", "reference": "https://github.com/kimoKimo77/sinda-nexus/pull/10", "verified": true }],
+      "evidence": [],
       "dependencies": ["sinda-nexus"],
       "risks": ["Simulation metrics are proxies, not physical measurements; no hardware control or wet-lab work is in scope."]
     }
