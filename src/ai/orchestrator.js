@@ -1,5 +1,5 @@
 import { DecisionEngine } from "./decision-engine.js";
-import { TaskPlanner } from "./task-planner.js";
+import { TaskPlanner, validatePlan } from "./task-planner.js";
 
 export class SindaOrchestrator {
   constructor({ provider, memory, executor, auditLog, decisionEngine = new DecisionEngine() } = {}) {
@@ -20,9 +20,11 @@ export class SindaOrchestrator {
   }
 
   async execute({ projectId, plan, actor = "system" } = {}) {
+    const safePlan = validatePlan(plan);
+    if (typeof projectId !== "string" || !projectId.trim()) throw new TypeError("projectId is required.");
     const results = [];
     const completed = new Set();
-    for (const task of plan.tasks) {
+    for (const task of safePlan.tasks) {
       const blockedBy = task.dependsOn.filter(id => !completed.has(id));
       if (blockedBy.length) {
         results.push({ taskId: task.id, status: "blocked", reason: "Dependencies not completed: " + blockedBy.join(", ") });
@@ -44,7 +46,7 @@ export class SindaOrchestrator {
         await this.#audit({ event: "task.failed", projectId, taskId: task.id, actor, error: error.message });
       }
     }
-    return { projectId, results, completedCount: completed.size, totalCount: plan.tasks.length };
+    return { projectId, results, completedCount: completed.size, totalCount: safePlan.tasks.length };
   }
 
   async #audit(entry) { if (typeof this.auditLog === "function") await this.auditLog({ ...entry, at: new Date().toISOString() }); }
