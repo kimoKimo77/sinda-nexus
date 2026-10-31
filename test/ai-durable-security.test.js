@@ -17,7 +17,7 @@ function fakeDb() {
         const row=approvals.get(params[params.length-2]);
         if (!row || row.status!==params[params.length-1]) return { changes:0 };
         const clause=sql.split(" WHERE ")[0].split(" SET ")[1];
-        const setNames=[...clause.matchAll(/([a-z_]+) = \?/g)].map(x=>x[1]);
+        const setNames=[...clause.matchAll(/([a-z_]+) = \?/g)].map(x=>x[1]).filter(name=>name !== "status");
         setNames.forEach((name,i)=>row[name]=params[i]);
         row.status=params[setNames.length]; return { changes:1 };
       }
