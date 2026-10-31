@@ -10,13 +10,17 @@ Configure an OpenAI-compatible chat-completions endpoint, model name, and API ke
 
 The included in-memory store scopes records by project ID and supports simple keyword retrieval. It is a preview adapter only: process restart clears data. Replace it with an authenticated persistent repository before multi-user or production use. Do not store passwords, API keys, private keys, seed phrases, or sensitive personal data in memory.
 
-## Planner and orchestrator
+## Planner, orchestrator, and evaluator
 
-The planner validates a bounded task list and supported action set. The orchestrator retrieves project-scoped context, records plan events, checks each task against the decision policy, enforces declared dependencies, and records execution outcomes. The executor is injected by the host application; this package does not grant unrestricted shell or filesystem access.
+The planner validates a bounded task list, supported actions, write payload sizes, and dependency ordering. The orchestrator retrieves project-scoped context, records plan events, checks each task against the decision policy, enforces declared dependencies, and records execution outcomes. The evaluator requests a structured score, pass/fail result, findings, and next steps, then validates the response shape. Treat model scores as advisory until a deterministic test/evidence policy is added. The executor is injected by the host application; the included workspace executor routes file writes only through the guarded writer and requires trusted handlers for other actions. This package does not grant unrestricted shell or filesystem access.
 
 ## Database connector
 
 The connector includes thin adapters for an injected PostgreSQL pool and SQLite prepared statements. It accepts allow-listed table names, permits a single restricted SELECT, rejects mutation/DDL keywords, comments, sensitive catalog/file functions, and out-of-scope tables, clamps LIMIT to the configured row cap, and logs reads. Write requests create approval records only; no write SQL is executed by this module. The application must provide a least-privilege database identity, ideally a database-level read-only role.
+
+## Runtime wiring
+
+`createSindaAI` wires the provider, project memory, approval ledger, optional database adapter, orchestrator, and evaluator from runtime configuration. Configure `SINDA_LLM_ENDPOINT`, `SINDA_LLM_MODEL`, and `SINDA_LLM_API_KEY` through a secret manager or protected environment. No credentials are committed. The host must inject the actual workspace executor and database pool/handle.
 
 ## Approvals and audit
 
