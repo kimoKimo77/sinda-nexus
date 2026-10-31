@@ -54,6 +54,8 @@ test("PostgreSQL RLS isolates tenants under a non-owner runtime role", {skip:!da
       await client.query("ROLLBACK");
     } finally { client.release(); }
   } finally {
+    await admin.query(`REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${role}`).catch(()=>{});
+    await admin.query(`REVOKE ALL PRIVILEGES ON SCHEMA public FROM ${role}`).catch(()=>{});
     await admin.query(`DROP ROLE IF EXISTS ${role}`).catch(()=>{});
     await admin.end();
   }
