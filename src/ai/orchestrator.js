@@ -1,5 +1,6 @@
 import { DecisionEngine } from "./decision-engine.js";
 import { TaskPlanner, validatePlan } from "./task-planner.js";
+import { PlanEvaluator } from "./evaluator.js";
 
 export class SindaOrchestrator {
   constructor({ provider, memory, executor, auditLog, decisionEngine = new DecisionEngine() } = {}) {
@@ -10,6 +11,7 @@ export class SindaOrchestrator {
     this.auditLog = auditLog;
     this.decisionEngine = decisionEngine;
     this.planner = new TaskPlanner({ provider });
+    this.evaluator = new PlanEvaluator({ provider });
   }
 
   async plan({ projectId, goal, constraints = [] } = {}) {
@@ -47,6 +49,12 @@ export class SindaOrchestrator {
       }
     }
     return { projectId, results, completedCount: completed.size, totalCount: safePlan.tasks.length };
+  }
+
+  async evaluate({ goal, plan, execution } = {}) {
+    const evaluation = await this.evaluator.evaluate({ goal, plan, execution });
+    await this.#audit({ event: "plan.evaluated", score: evaluation.score, passed: evaluation.passed });
+    return evaluation;
   }
 
   async #audit(entry) { if (typeof this.auditLog === "function") await this.auditLog({ ...entry, at: new Date().toISOString() }); }
