@@ -114,6 +114,8 @@ export function createDashboardHandlers({ pool, auth } = {}) {
       }
       return inTenantTransaction(pool,identity,projectId,async client => {
         await requireProjectRole(client,projectId,identity.sub,["owner","admin","member"]);
+        // Serialize quota checks per project so concurrent requests cannot pass the count together.
+        await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",[projectId]);
         const count=await client.query("SELECT count(*)::int AS count FROM agents WHERE project_id=$1",[projectId]);
         if(count.rows[0].count>=100) { const error=new Error("Project agent limit reached."); error.status=429; throw error; }
         const id=randomUUID();
