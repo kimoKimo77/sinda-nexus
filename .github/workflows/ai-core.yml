@@ -1,0 +1,29 @@
+name: Sinda AI Core
+
+on:
+  push:
+    branches:
+      - "feat/sinda-autonomous-ai-core"
+  pull_request:
+    branches:
+      - "main"
+      - "feat/**"
+      - "fix/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
