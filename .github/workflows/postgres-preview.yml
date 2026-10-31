@@ -67,4 +67,6 @@ jobs:
       - name: Verify restored tables exist
         run: |
           result=$(psql "$SINDA_PG_RESTORE_TEST_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command="SELECT (to_regclass('public.sinda_project_memory') IS NOT NULL)::int + (to_regclass('public.sinda_approval_ledger') IS NOT NULL)::int;")
+          rows=$(psql "$SINDA_PG_RESTORE_TEST_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command="SELECT (SELECT count(*) FROM sinda_project_memory) + (SELECT count(*) FROM sinda_approval_ledger);")
           test "$result" = "2"
+          test "$rows" -ge "4"
