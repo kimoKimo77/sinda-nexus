@@ -3,11 +3,11 @@ import { createAuthService } from "./auth/service.js";
 import { createDashboardHandlers } from "./dashboard/handlers.js";
 import { createSindaHttpServer } from "./server/http.js";
 
-export async function createSindaApplication({ pool, env = process.env, runSchemaMigrations = true } = {}) {
+export async function createSindaApplication({ pool, migrationPool = pool, env = process.env, runSchemaMigrations = true } = {}) {
   if (!pool || typeof pool.connect !== "function" || typeof pool.query !== "function") {
     throw new TypeError("A PostgreSQL pool is required to create the SINDA application.");
   }
-  if (runSchemaMigrations) await runMigrations({ pool });
+  if (runSchemaMigrations) await runMigrations({ pool:migrationPool });
   const auth=createAuthService({
     pool,
     sessionSecret:env.SINDA_SESSION_SECRET,
