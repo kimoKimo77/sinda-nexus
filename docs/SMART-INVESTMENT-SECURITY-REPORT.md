@@ -28,16 +28,16 @@
 
 ## Additional PostgreSQL isolation gate
 
-A disposable PostgreSQL 16 workflow and a non-owner runtime-role RLS integration test have been added. The test seeds two tenants and checks that a read-only runtime role can only see its own projects, memberships, agents and audit events.
+A disposable PostgreSQL 16 workflow and a non-owner runtime-role RLS integration test were executed successfully on Node.js 22 and 24. The test seeded two tenants and verified that the read-only runtime role could only see its own projects, memberships, agents and audit events. It also verified that the runtime role does not have INSERT privilege on the projects table.
 
-**Status:** The new PostgreSQL workflow was queued separately after the initial Node test run. Its final result must be recorded before claiming live RLS verification. The earlier Node-only run skipped the PostgreSQL integration test because no database URL was present.
+The first live run exposed a missing explicit SELECT grant in the test harness. The harness was corrected to grant only SELECT on the four scoped tables, then the PostgreSQL workflow was rerun successfully on both Node versions. The initial Node-only run's skipped database test is superseded by this successful live run.
 
 ## Findings and residual risks
 
 1. **No live market provider is configured.** Current UI shows the five market categories but no prices, quotes, property valuations or recommendations. Provider accuracy, freshness, licensing and uptime are unverified.
 2. **No real portfolio or financial account is connected.** Holdings, account balances and broker data are not available in this Preview.
 3. **Inherited authentication has no demonstrated session revocation or MFA in this release.** The investment UI keeps its bearer token in page memory and clears it on logout; the underlying signed-session design still needs revocation/rotation and MFA before production.
-4. **Live RLS evidence is pending.** Unit-level policy declaration tests do not replace a real PostgreSQL test using a non-owner, non-BYPASSRLS runtime role.
+4. **Live RLS verification passed in disposable CI.** This proves the tested policies and read-only runtime role for the exercised tables and scenarios; it does not prove every possible query path or production database configuration.
 5. **No mobile-browser visual QA or production penetration test has been completed.**
 6. **The current dependency audit is narrow.** It reports the lockfile's single package and is not a substitute for SAST, secret scanning, container scanning or a full third-party supply-chain review.
 
