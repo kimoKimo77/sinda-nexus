@@ -60,7 +60,7 @@ export function createAuthService({ pool, sessionSecret, sessionTtlSeconds } = {
   return {
     async login({ email, password } = {}) {
       if (typeof email !== "string" || typeof password !== "string" || email.length > 254 || password.length > 256) {
-        throw new Error("Invalid email or password.");
+        const error = new Error("Invalid email or password."); error.status=401; throw error;
       }
       const result = await pool.query(
         "SELECT id, organization_id, email, display_name, role, password_hash, active FROM users WHERE email = $1 LIMIT 1",
