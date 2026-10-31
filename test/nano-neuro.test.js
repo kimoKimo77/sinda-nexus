@@ -47,6 +47,9 @@ test("trusted approval verifier receives immutable project-bound context", () =>
 test("agent registry blocks escalation, cross-project parenting, and invalid genome payloads", () => {
   const registry = new AgentRegistry({ maxAgents: 4, maxDepth: 2, maxChildren: 2, verifySpawnApproval: testApprovalVerifier });
   registry.createRoot({ id: "root", projectId: "p", capabilities: ["analyze"] });
+  assert.throws(() => registry.get("root"), /Invalid agent or project identity/);
+  assert.equal(registry.get("root", "other"), null);
+  assert.equal(registry.get("root", "p").id, "root");
   const approval = { kind: "synthetic-preview-population", projectId: "p" };
   assert.throws(() => registry.spawnChild({
     id: "escalated", parentId: "root", projectId: "p", capabilities: ["simulate"], approval
