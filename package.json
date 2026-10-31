@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "description": "Sinda Nexus with a policy-governed AI planning and execution core",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "start": "node src/server.js",
     "test": "node --test",
-    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --check src/ai/generative-provider.js && node --check src/ai/project-memory.js && node --check src/ai/task-planner.js && node --check src/ai/approval-ledger.js && node --check src/ai/database/connector.js && node --check src/ai/orchestrator.js && node --check src/ai/evaluator.js && node --check src/ai/workspace-task-executor.js && node --check src/ai/runtime.js && node --check src/ai/index.js && node --check src/ai/database/durable-repositories.js && node --check src/ai/host-adapter.js && node --test"
+    "check": "node --check src/server.js && node --check src/server/http.js && node --check src/application.js && node --check src/db/migrations.js && node --check src/auth/service.js && node --check src/dashboard/handlers.js && node --check src/dashboard/page.js && node --check src/dashboard/client.js && node --check src/dashboard/client-asset.js && node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --check src/ai/generative-provider.js && node --check src/ai/project-memory.js && node --check src/ai/task-planner.js && node --check src/ai/approval-ledger.js && node --check src/ai/database/connector.js && node --check src/ai/orchestrator.js && node --check src/ai/evaluator.js && node --check src/ai/workspace-task-executor.js && node --check src/ai/runtime.js && node --check src/ai/index.js && node --check src/ai/database/durable-repositories.js && node --check src/ai/host-adapter.js && node --test"
   }
 }

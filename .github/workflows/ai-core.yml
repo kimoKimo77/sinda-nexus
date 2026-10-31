@@ -3,7 +3,8 @@ name: Sinda AI Core
 on:
   push:
     branches:
-      - "feat/sinda-autonomous-ai-core"
+      - "feat/**"
+      - "fix/**"
   pull_request:
     branches:
       - "main"
@@ -16,6 +17,20 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sinda_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sinda_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       matrix:
         node-version: [22, 24]
@@ -26,4 +41,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
-      - run: npm run check
+      # Temporary CI-only driver install until the pinned runtime dependency and lockfile are committed.
+      - run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund pg@8.23.1
+      - name: Syntax and unit plus live PostgreSQL integration tests
+        run: npm run check
+        env:
+          SINDA_PG_TEST_URL: postgres://postgres:postgres@127.0.0.1:5432/sinda_test

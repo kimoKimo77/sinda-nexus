@@ -1,0 +1,182 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { runMigrations, MIGRATIONS } from "../src/db/migrations.js";
+import { hashPassword, verifyPassword, createSessionService, createAuthService } from "../src/auth/service.js";
+import { createSindaHttpServer } from "../src/server/http.js";
+import { createDashboardHandlers } from "../src/dashboard/handlers.js";
+
+function migrationPool() {
+  const applied=new Map(), calls=[];
+  const client={
+    async query(sql,params=[]) {
+      calls.push(sql.trim().split(/\s+/).slice(0,3).join(" "));
+      if(sql.includes("SELECT version, checksum")) return {rows:[...applied].map(([version,checksum])=>({version,checksum}))};
+      if(sql.includes("INSERT INTO schema_migrations")) { applied.set(params[0],params[2]); return {rowCount:1}; }
+      return {rows:[],rowCount:1};
+    },
+    release(){calls.push("RELEASE");}
+  };
+  return {applied,calls,connect:async()=>client};
+}
+
+test("versioned PostgreSQL migrations apply once and keep checksums",async()=>{
+  const pool=migrationPool();
+  const first=await runMigrations({pool});
+  assert.deepEqual(first.applied,[1]);
+  const second=await runMigrations({pool});
+  assert.deepEqual(second.applied,[]);
+  assert.equal(pool.applied.size,1);
+  assert.ok(pool.calls.includes("COMMIT"));
+  assert.ok(pool.calls.includes("RELEASE"));
+});
+
+test("migration runner rejects edited applied migrations and rolls back failures",async()=>{
+  const pool=migrationPool();
+  await runMigrations({pool});
+  await assert.rejects(()=>runMigrations({pool,migrations:[{...MIGRATIONS[0],sql:MIGRATIONS[0].sql+" -- changed"}]}),/checksum mismatch/);
+  const broken=migrationPool();
+  const client=await broken.connect();
+  client.query=async sql=>{
+    if(sql.includes("SELECT version, checksum")) return {rows:[]};
+    if(sql==="BROKEN SQL") throw new Error("syntax error");
+    return {rows:[],rowCount:1};
+  };
+  await assert.rejects(()=>runMigrations({pool:broken,migrations:[{version:1,name:"broken",sql:"BROKEN SQL"}]}),/syntax error/);
+});
+
+test("password hashes use scrypt and verify without storing plaintext",async()=>{
+  const hash=await hashPassword("a-very-long-test-password");
+  assert.match(hash,/^scrypt\$/);
+  assert.equal(await verifyPassword("a-very-long-test-password",hash),true);
+  assert.equal(await verifyPassword("incorrect-password",hash),false);
+  await assert.rejects(()=>hashPassword("short"),/12 to 256/);
+});
+
+test("signed sessions reject tampering and expiration",()=>{
+  let now=1_800_000_000_000;
+  const sessions=createSessionService({secret:"x".repeat(48),ttlSeconds:300,clock:()=>now});
+  const token=sessions.issue({id:"user-1",organization_id:"org-1",role:"owner"});
+  assert.equal(sessions.verify(token).sub,"user-1");
+  assert.equal(sessions.verify(token+"x"),null);
+  now+=301_000;
+  assert.equal(sessions.verify(token),null);
+});
+
+test("login returns a signed session and generic errors for invalid credentials",async()=>{
+  const passwordHash=await hashPassword("correct-horse-battery-staple");
+  const pool={query:async(_sql,params)=>({rows:params[0]==="owner@example.test"?[{
+    id:"user-1",organization_id:"org-1",email:"owner@example.test",display_name:"Owner",
+    role:"owner",password_hash:passwordHash,active:true
+  }]:[]})};
+  const auth=createAuthService({pool,sessionSecret:"s".repeat(48)});
+  const result=await auth.login({email:"OWNER@example.test",password:"correct-horse-battery-staple"});
+  assert.equal(auth.authenticate({headers:{authorization:"Bearer "+result.token}}).sub,"user-1");
+  await assert.rejects(()=>auth.login({email:"owner@example.test",password:"wrong-password"}),error=>error.status===401 && /Invalid email or password/.test(error.message));
+  await assert.rejects(()=>auth.login({email:"missing@example.test",password:"wrong-password"}),error=>error.status===401);
+});
+
+async function withServer(options,run) {
+  const server=createSindaHttpServer(options);
+  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+  const address=server.address();
+  try { await run("http://127.0.0.1:"+address.port); }
+  finally { await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve())); }
+}
+
+test("authenticated dashboard routes delegate identity and tenant checks to handlers",async()=>{
+  const calls=[];
+  const dashboard={
+    login:async body=>({token:"preview-token",user:{email:body.email}}),
+    me:async request=>{calls.push(request.headers.authorization);return {id:"u1"};},
+    projects:async()=>[{id:"p1"}],
+    dashboard:async(_request,id)=>({projectId:id}),
+    agents:async(_request,id)=>[{projectId:id}],
+    createAgent:async(_request,id,body)=>({projectId:id,name:body.name})
+  };
+  await withServer({dashboard},async base=>{
+    const login=await fetch(base+"/api/v1/auth/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:"a@b.test"})});
+    assert.equal(login.status,200);
+    assert.equal((await login.json()).token,"preview-token");
+    const headers={authorization:"Bearer preview-token"};
+    assert.equal((await fetch(base+"/api/v1/auth/me",{headers})).status,200);
+    assert.deepEqual((await (await fetch(base+"/api/v1/projects",{headers})).json()).projects,[{id:"p1"}]);
+    assert.equal((await fetch(base+"/api/v1/projects/123e4567-e89b-42d3-a456-426614174000/dashboard",{headers})).status,200);
+    const created=await fetch(base+"/api/v1/projects/123e4567-e89b-42d3-a456-426614174000/agents",{method:"POST",headers:{"content-type":"application/json",...headers},body:JSON.stringify({name:"Auditor",agentType:"auditor"})});
+    assert.equal(created.status,201);
+    assert.equal(calls[0],"Bearer preview-token");
+  });
+});
+
+test("oversized or malformed JSON bodies are rejected",async()=>{
+  await withServer({dashboard:{login:async()=>({})},maxBodyBytes:10},async base=>{
+    const oversized=await fetch(base+"/api/v1/auth/login",{method:"POST",body:"{\"email\":\"very-long\"}"});
+    assert.equal(oversized.status,413);
+    const malformed=await fetch(base+"/api/v1/auth/login",{method:"POST",body:"{"});
+    assert.equal(malformed.status,400);
+  });
+});
+
+test("readiness is not reported when no dependency checks are configured",async()=>{
+  await withServer({},async base=>{
+    const response=await fetch(base+"/readyz");
+    assert.equal(response.status,503);
+    assert.equal((await response.json()).status,"not_ready");
+  });
+});
+
+test("readiness requires every configured dependency check to pass",async()=>{
+  await withServer({healthChecks:{postgres:async()=>true,cache:async()=>false}},async base=>{
+    const response=await fetch(base+"/readyz");
+    assert.equal(response.status,503);
+    assert.deepEqual((await response.json()).checks,{postgres:"ok",cache:"not_ready"});
+  });
+});
+
+test("dashboard page and same-origin script are served with restrictive security headers",async()=>{
+  await withServer({},async base=>{
+    const page=await fetch(base+"/dashboard");
+    assert.equal(page.status,200);
+    assert.match(page.headers.get("content-security-policy"),/script-src 'self'/);
+    assert.match(await page.text(),/لوحة التحكم السيادية/);
+    const script=await fetch(base+"/dashboard.js");
+    assert.equal(script.status,200);
+    assert.match(script.headers.get("content-type"),/javascript/);
+    assert.match(await script.text(),/api\/v1\/auth\/login/);
+  });
+});
+
+test("tenant schema enforces row-level security on project-scoped records",()=>{
+  const sql=MIGRATIONS[0].sql;
+  for(const table of ["projects","project_members","agents","audit_events"]) {
+    assert.match(sql,new RegExp("ALTER TABLE "+table+" ENABLE ROW LEVEL SECURITY"));
+    assert.match(sql,new RegExp("ALTER TABLE "+table+" FORCE ROW LEVEL SECURITY"));
+  }
+  assert.match(sql,/sinda\.organization_id/);
+  assert.match(sql,/sinda\.user_id/);
+  assert.match(sql,/sinda\.project_id/);
+  assert.match(sql,/CREATE TABLE agents/);
+});
+
+test("agent creation requires project role and enforces a per-project capacity limit",async()=>{
+  const calls=[];
+  let membershipRole="viewer",agentCount=0;
+  const pool={connect:async()=>({
+    async query(sql){
+      calls.push(sql);
+      if(sql.includes("SELECT pm.role")) return {rows:[{role:membershipRole}]};
+      if(sql.includes("pg_advisory_xact_lock(hashtextextended")) return {rows:[]};
+      if(sql.includes("SELECT count(*)::int AS count FROM agents")) return {rows:[{count:agentCount}]};
+      if(sql.startsWith("INSERT INTO agents")) return {rows:[{id:"a1"}]};
+      return {rows:[],rowCount:1};
+    },
+    release(){}
+  })};
+  const auth={authenticate:()=>({sub:"user-1",org:"org-1",role:"owner"})};
+  const handlers=createDashboardHandlers({pool,auth});
+  const request={headers:{authorization:"Bearer signed"}};
+  await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===403);
+  membershipRole="member";agentCount=100;
+  await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===429);
+  assert.equal(calls.some(sql=>sql.startsWith("INSERT INTO agents")),false);
+  assert.ok(calls.some(sql=>sql.includes("pg_advisory_xact_lock(hashtextextended")));
+});

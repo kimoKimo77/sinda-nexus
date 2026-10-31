@@ -9,3 +9,8 @@ export { createWorkspaceTaskExecutor } from "./workspace-task-executor.js";
 export { createSindaAI } from "./runtime.js";
 export { PersistentProjectMemory, PersistentApprovalLedger, migrateDurableStores, durableSchema } from "./database/durable-repositories.js";
 export { createAuthorizedHostHandlers, createUntrustedContextEnvelope } from "./host-adapter.js";
+
+export { MIGRATIONS, runMigrations } from "../db/migrations.js";
+export { hashPassword, verifyPassword, createSessionService, createAuthService, provisionFirstOwner } from "../auth/service.js";
+export { createDashboardHandlers } from "../dashboard/handlers.js";
+export { createSindaApplication } from "../application.js";
