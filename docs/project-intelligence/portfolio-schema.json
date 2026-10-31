@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sinda Project Intelligence Portfolio Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "category", "status", "stage"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$", "maxLength": 80 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "repository": { "type": ["string", "null"], "maxLength": 300 },
+    "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "status": { "enum": ["idea", "discovery", "planned", "in_progress", "blocked", "preview", "pilot", "production", "archived", "external_unverified"] },
+    "stage": { "enum": ["concept", "validation", "prototype", "mvp", "pilot", "scale"] },
+    "sourceConfidence": { "enum": ["verified", "unverified"] },
+    "priority": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "userImpact": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "strategicFit": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "readiness": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "urgency": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "evidenceStrength": { "type": "integer", "minimum": 0, "maximum": 5 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "object", "required": ["type", "reference", "verified"], "properties": { "type": { "enum": ["problem_validation", "market_research", "customer_interviews", "prototype_demo", "traction", "business_model", "unit_economics", "legal_ip", "team", "security_review", "financial_model"] }, "reference": { "type": "string", "maxLength": 300 }, "verified": { "type": "boolean" } }, "additionalProperties": false } },
+    "dependencies": { "type": "array", "items": { "type": "string", "maxLength": 80 } },
+    "risks": { "type": "array", "items": { "type": "string", "maxLength": 300 } }
+  }
+}
