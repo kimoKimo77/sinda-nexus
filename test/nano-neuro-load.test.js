@@ -29,7 +29,7 @@ test("staged load smoke: 100, 1000, 5000 and 10000 virtual agents", { timeout: 6
     const agents = createVirtualPopulation(simulation, { count: target - 1, seed: target });
     const registryMs = performance.now() - registryStarted;
     assert.equal(agents.length + 1, target);
-    assert.equal(simulation.registry.list({ projectId: `load-${target}`).length, target);
+    assert.equal(simulation.registry.list({ projectId: `load-${target}` }).length, target);
 
     const sensors = new VirtualSensorHub({ registry: simulation.registry, maxEventsPerAgent: 2 });
     const sensorStarted = performance.now();
