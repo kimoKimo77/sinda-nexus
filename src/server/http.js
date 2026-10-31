@@ -17,54 +17,119 @@ function sendJson(response, status, payload) {
     "content-length": Buffer.byteLength(body),
     "cache-control": "no-store",
     "x-content-type-options": "nosniff",
-    "referrer-policy": "no-referrer"
+    "referrer-policy": "no-referrer",
+    "content-security-policy": "default-src 'none'; frame-ancestors 'none'"
   });
   response.end(body);
 }
 
-export function createSindaHttpServer({ healthChecks = {}, modules = PREVIEW_MODULES, maxRequestsPerMinute = 120 } = {}) {
-  const requests = [];
-  return createServer(async (request, response) => {
-    const requestId = randomUUID();
-    response.setHeader("x-request-id", requestId);
-
-    if (!["GET", "HEAD"].includes(request.method)) {
-      sendJson(response, 405, { error: "method_not_allowed", requestId });
-      return;
+async function readJson(request, maxBytes) {
+  let size=0;
+  const chunks=[];
+  for await (const chunk of request) {
+    size+=chunk.length;
+    if (size>maxBytes) {
+      const error=new Error("Request body too large.");
+      error.status=413;
+      throw error;
     }
+    chunks.push(chunk);
+  }
+  if (!size) return {};
+  try {
+    const parsed=JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    if (!parsed || typeof parsed!=="object" || Array.isArray(parsed)) throw new Error("Object required.");
+    return parsed;
+  } catch {
+    const error=new Error("A valid JSON object is required.");
+    error.status=400;
+    throw error;
+  }
+}
 
-    const now = Date.now();
-    while (requests.length && requests[0] <= now - 60_000) requests.shift();
-    if (requests.length >= maxRequestsPerMinute) {
-      sendJson(response, 429, { error: "rate_limited", requestId });
-      return;
-    }
-    requests.push(now);
-
-    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
-    if (pathname === "/healthz") {
-      sendJson(response, 200, { status: "ok", service: "sinda-sovereign-preview", requestId });
-      return;
-    }
-    if (pathname === "/readyz") {
-      const checks = {};
-      for (const [name, check] of Object.entries(healthChecks)) {
-        try { checks[name] = (await check()) === true ? "ok" : "not_ready"; }
-        catch { checks[name] = "error"; }
+export function createSindaHttpServer({
+  healthChecks = {}, modules = PREVIEW_MODULES, maxRequestsPerMinute = 120,
+  dashboard, maxBodyBytes = 16_384
+} = {}) {
+  const requests=[];
+  return createServer(async (request,response) => {
+    const requestId=randomUUID();
+    response.setHeader("x-request-id",requestId);
+    try {
+      if (!["GET","HEAD","POST"].includes(request.method)) {
+        sendJson(response,405,{error:"method_not_allowed",requestId});
+        return;
       }
-      const ready = Object.values(checks).every(value => value === "ok");
-      sendJson(response, ready ? 200 : 503, { status: ready ? "ready" : "not_ready", checks, requestId });
-      return;
+      const now=Date.now();
+      while(requests.length && requests[0]<=now-60_000) requests.shift();
+      if(requests.length>=maxRequestsPerMinute) {
+        sendJson(response,429,{error:"rate_limited",requestId});
+        return;
+      }
+      requests.push(now);
+
+      const url=new URL(request.url ?? "/", "http://localhost");
+      const pathname=url.pathname;
+      if(pathname==="/healthz") {
+        sendJson(response,200,{status:"ok",service:"sinda-sovereign-preview",requestId});
+        return;
+      }
+      if(pathname==="/readyz") {
+        const checks={};
+        for(const [name,check] of Object.entries(healthChecks)) {
+          try { checks[name]=(await check())===true?"ok":"not_ready"; }
+          catch { checks[name]="error"; }
+        }
+        const ready=Object.values(checks).every(value=>value==="ok");
+        sendJson(response,ready?200:503,{status:ready?"ready":"not_ready",checks,requestId});
+        return;
+      }
+      if(pathname==="/api/v1/modules" && request.method==="GET") {
+        sendJson(response,200,{mode:"preview",modules,restrictions:{
+          real_fundraising:false,custody_or_private_keys:false,
+          mainnet_minting_or_deployment:false,financial_transactions:false
+        },requestId});
+        return;
+      }
+      if (!dashboard) {
+        sendJson(response,503,{error:"dashboard_not_configured",requestId});
+        return;
+      }
+      if(pathname==="/api/v1/auth/login" && request.method==="POST") {
+        const body=await readJson(request,maxBodyBytes);
+        const result=await dashboard.login(body);
+        sendJson(response,200,{...result,requestId});
+        return;
+      }
+      if(pathname==="/api/v1/auth/me" && request.method==="GET") {
+        sendJson(response,200,{user:await dashboard.me(request),requestId});
+        return;
+      }
+      if(pathname==="/api/v1/projects" && request.method==="GET") {
+        sendJson(response,200,{projects:await dashboard.projects(request),requestId});
+        return;
+      }
+      const projectMatch=pathname.match(/^\/api\/v1\/projects\/([0-9a-f-]{36})\/(dashboard|agents)$/i);
+      if(projectMatch) {
+        const [,projectId,resource]=projectMatch;
+        if(resource==="dashboard" && request.method==="GET") {
+          sendJson(response,200,{dashboard:await dashboard.dashboard(request,projectId),requestId});
+          return;
+        }
+        if(resource==="agents" && request.method==="GET") {
+          sendJson(response,200,{agents:await dashboard.agents(request,projectId),requestId});
+          return;
+        }
+        if(resource==="agents" && request.method==="POST") {
+          const body=await readJson(request,maxBodyBytes);
+          sendJson(response,201,{agent:await dashboard.createAgent(request,projectId,body),requestId});
+          return;
+        }
+      }
+      sendJson(response,404,{error:"not_found",requestId});
+    } catch(error) {
+      const status=Number.isInteger(error.status)?error.status:400;
+      sendJson(response,status,{error:status>=500?"internal_error":error.message,requestId});
     }
-    if (pathname === "/api/v1/modules") {
-      sendJson(response, 200, { mode: "preview", modules, restrictions: {
-        real_fundraising: false,
-        custody_or_private_keys: false,
-        mainnet_minting_or_deployment: false,
-        financial_transactions: false
-      }, requestId });
-      return;
-    }
-    sendJson(response, 404, { error: "not_found", requestId });
   });
 }
