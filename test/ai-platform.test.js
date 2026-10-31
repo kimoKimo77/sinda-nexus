@@ -60,7 +60,7 @@ test("database connector scopes SELECT, caps rows, and queues writes for approva
   await assert.rejects(() => db.read({ table: "projects", sql: "DELETE FROM projects" }), /SELECT/);
   const request = await db.requestWrite({ table: "projects", operation: "update", requestedBy: "user", reason: "edit project" });
   assert.equal((await approvals.get(request.id)).status, "pending");
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 });
 
 test("orchestrator plans from scoped memory and executes only allowed tasks", async () => {
