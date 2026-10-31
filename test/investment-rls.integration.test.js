@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
 import { runMigrations } from "../src/db/migrations.js";
 
 const migrationUrl=process.env.SINDA_PG_TENANT_TEST_URL;
@@ -10,6 +9,7 @@ const runtimeUrl=process.env.SINDA_PG_RUNTIME_TEST_URL;
 test("tenant RLS isolates projects and investment-adjacent records for a non-owner read-only role", {
   skip: (!migrationUrl || !runtimeUrl) && "Set disposable tenant migration and runtime PostgreSQL URLs."
 }, async()=>{
+  const { Pool } = await import("pg");
   const owner=new Pool({connectionString:migrationUrl,max:2});
   const runtime=new Pool({connectionString:runtimeUrl,max:2});
   const orgA=randomUUID(), orgB=randomUUID();
@@ -44,12 +44,12 @@ test("tenant RLS isolates projects and investment-adjacent records for a non-own
       ownerClient.release();
     }
 
-    async function readAsA(sql) {
+    async function readAsA(sql,params=[]) {
       const client=await runtime.connect();
       try {
         await client.query("BEGIN");
         await client.query("SELECT set_config('sinda.organization_id',$1,true),set_config('sinda.user_id',$2,true),set_config('sinda.project_id',$3,true)",[orgA,userA,projectA]);
-        const result=await client.query(sql);
+        const result=await client.query(sql,params);
         await client.query("COMMIT");
         return result.rows;
       } catch(error) {
