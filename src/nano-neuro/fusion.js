@@ -7,7 +7,7 @@ export function fuseCapabilities(registry, agentIds, { projectId, approvedCapabi
     || agentIds.some(id => typeof id !== "string" || !id)) {
     throw new RangeError("Fusion requires 2 to 20 distinct registered agent IDs");
   }
-  const agents = agentIds.map(id => registry.get(id));
+  const agents = agentIds.map(id => registry.get(id, projectId));
   if (agents.some(agent => !agent || agent.projectId !== projectId)) throw new Error("Fusion source is missing or outside project scope");
   if (!Array.isArray(approvedCapabilities)) throw new TypeError("Approved capabilities must be an array");
   const approved = new Set(approvedCapabilities);
