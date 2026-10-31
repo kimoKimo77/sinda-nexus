@@ -1,5 +1,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { DASHBOARD_HTML } from "../dashboard/page.js";
+import { DASHBOARD_CLIENT_JS } from "../dashboard/client-asset.js";
 
 export const PREVIEW_MODULES = Object.freeze([
   { id: "project-factory", name: "Commercial project factory", status: "planned", mode: "preview" },
@@ -70,6 +72,18 @@ export function createSindaHttpServer({
 
       const url=new URL(request.url ?? "/", "http://localhost");
       const pathname=url.pathname;
+      if(pathname==="/dashboard" && request.method==="GET") {
+        const body=DASHBOARD_HTML;
+        response.writeHead(200,{"content-type":"text/html; charset=utf-8","content-length":Buffer.byteLength(body),"cache-control":"no-store","x-content-type-options":"nosniff","content-security-policy":"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"});
+        response.end(body);
+        return;
+      }
+      if(pathname==="/dashboard.js" && request.method==="GET") {
+        const body=DASHBOARD_CLIENT_JS;
+        response.writeHead(200,{"content-type":"text/javascript; charset=utf-8","content-length":Buffer.byteLength(body),"cache-control":"no-store","x-content-type-options":"nosniff","content-security-policy":"default-src 'none'; script-src 'self'"});
+        response.end(body);
+        return;
+      }
       if(pathname==="/healthz") {
         sendJson(response,200,{status:"ok",service:"sinda-sovereign-preview",requestId});
         return;
