@@ -105,6 +105,10 @@ export function createSindaHttpServer({
         },requestId});
         return;
       }
+      if(["/healthz","/readyz","/api/v1/modules","/dashboard","/dashboard.js"].includes(pathname)) {
+        sendJson(response,405,{error:"method_not_allowed",requestId});
+        return;
+      }
       if (!dashboard) {
         sendJson(response,503,{error:"dashboard_not_configured",requestId});
         return;
