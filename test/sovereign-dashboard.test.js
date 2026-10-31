@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { runMigrations, MIGRATIONS } from "../src/db/migrations.js";
 import { hashPassword, verifyPassword, createSessionService, createAuthService } from "../src/auth/service.js";
 import { createSindaHttpServer } from "../src/server/http.js";
+import { createDashboardHandlers } from "../src/dashboard/handlers.js";
 
 function migrationPool() {
   const applied=new Map(), calls=[];
@@ -137,4 +138,26 @@ test("tenant schema enforces row-level security on project-scoped records",()=>{
   assert.match(sql,/sinda\.user_id/);
   assert.match(sql,/sinda\.project_id/);
   assert.match(sql,/CREATE TABLE agents/);
+});
+
+test("agent creation requires project role and enforces a per-project capacity limit",async()=>{
+  const calls=[];
+  let membershipRole="viewer",agentCount=0;
+  const pool={connect:async()=>({
+    async query(sql){
+      calls.push(sql);
+      if(sql.includes("SELECT pm.role")) return {rows:[{role:membershipRole}]};
+      if(sql.includes("SELECT count(*)::int AS count FROM agents")) return {rows:[{count:agentCount}]};
+      if(sql.startsWith("INSERT INTO agents")) return {rows:[{id:"a1"}]};
+      return {rows:[],rowCount:1};
+    },
+    release(){}
+  })};
+  const auth={authenticate:()=>({sub:"user-1",org:"org-1",role:"owner"})};
+  const handlers=createDashboardHandlers({pool,auth});
+  const request={headers:{authorization:"Bearer signed"}};
+  await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===403);
+  membershipRole="member";agentCount=100;
+  await assert.rejects(()=>handlers.createAgent(request,"123e4567-e89b-42d3-a456-426614174000",{name:"Builder",agentType:"builder"}),error=>error.status===429);
+  assert.equal(calls.some(sql=>sql.startsWith("INSERT INTO agents")),false);
 });
