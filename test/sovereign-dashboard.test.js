@@ -113,3 +113,16 @@ test("oversized or malformed JSON bodies are rejected",async()=>{
     assert.equal(malformed.status,400);
   });
 });
+
+test("dashboard page and same-origin script are served with restrictive security headers",async()=>{
+  await withServer({},async base=>{
+    const page=await fetch(base+"/dashboard");
+    assert.equal(page.status,200);
+    assert.match(page.headers.get("content-security-policy"),/script-src 'self'/);
+    assert.match(await page.text(),/لوحة التحكم السيادية/);
+    const script=await fetch(base+"/dashboard.js");
+    assert.equal(script.status,200);
+    assert.match(script.headers.get("content-type"),/javascript/);
+    assert.match(await script.text(),/api\/v1\/auth\/login/);
+  });
+});
