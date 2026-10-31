@@ -11,9 +11,13 @@ export function createVirtualPopulation(simulation, { count, seed = 1 } = {}) {
   if (!simulation?.registry || !Number.isSafeInteger(count) || count < 1 || count > simulation.config.maxAgents - 1) throw new RangeError("Population count exceeds configured virtual capacity");
   const agents = [];
   for (let i = 0; i < count; i++) {
+    // Keep each parent at or below the configured fan-out of 100.
+    // The first 100 agents are direct children of the root; later agents
+    // are distributed across those children, keeping the test population shallow.
+    const parent = i < 100 ? simulation.root : agents[Math.floor((i - 100) / 100)];
     const id = `agent-${String(i + 1).padStart(5, "0")}`;
     agents.push(simulation.registry.spawnChild({
-      id, parentId: simulation.root.id, projectId: simulation.config.projectId,
+      id, parentId: parent.id, projectId: simulation.config.projectId,
       capabilities: ["analyze", "classify", "simulate", "summarize"],
       genome: createGenome({ seed: (seed + i) >>> 0 }),
       approval: { approved: true, approvedBy: "preview-simulation-controller", projectId: simulation.config.projectId }
