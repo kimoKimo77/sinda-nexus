@@ -84,11 +84,11 @@ export function createSindaHttpServer({
         response.end(body);
         return;
       }
-      if(pathname==="/healthz") {
+      if(pathname==="/healthz" && ["GET","HEAD"].includes(request.method)) {
         sendJson(response,200,{status:"ok",service:"sinda-sovereign-preview",requestId});
         return;
       }
-      if(pathname==="/readyz") {
+      if(pathname==="/readyz" && ["GET","HEAD"].includes(request.method)) {
         const checks={};
         for(const [name,check] of Object.entries(healthChecks)) {
           try { checks[name]=(await check())===true?"ok":"not_ready"; }
