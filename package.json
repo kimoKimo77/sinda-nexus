@@ -3,10 +3,10 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Sinda Nexus with a policy-governed decision and workspace writing core",
+  "description": "Sinda Nexus with a policy-governed AI planning and execution core",
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --test"
+    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --check src/ai/generative-provider.js && node --check src/ai/project-memory.js && node --check src/ai/task-planner.js && node --check src/ai/approval-ledger.js && node --check src/ai/database/connector.js && node --check src/ai/orchestrator.js && node --test"
   }
 }
