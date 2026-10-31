@@ -53,11 +53,14 @@ test("host read/test/evaluate handlers require authenticated project-scoped auth
   const calls=[];
   const handlers=createAuthorizedHostHandlers({
     authorize:async request=>request.actor==="alice" && request.projectId==="p1",
-    handlers:{read:async x=>{calls.push(x);return "read-ok";},test:async()=> "test-ok"}
+    handlers:{read:async x=>{calls.push(x);return "read-ok";},test:async()=> "test-ok",evaluate:async()=> "eval-ok",analyze:async()=> "analysis-ok"}
   });
   assert.equal(await handlers.read({actor:"alice",projectId:"p1",task:{action:"read"}}),"read-ok");
   await assert.rejects(()=>handlers.read({actor:"mallory",projectId:"p1",task:{}}),/Permission denied/);
   await assert.rejects(()=>handlers.test({actor:"alice",projectId:"p2",task:{}}),/Permission denied/);
+  assert.equal(await handlers.evaluate({actor:"alice",projectId:"p1",task:{}}),"eval-ok");
+  assert.equal(await handlers.analyze({actor:"alice",projectId:"p1",task:{}}),"analysis-ok");
+  await assert.rejects(()=>handlers.read({projectId:"p1",task:{}}),/authenticated actor/);
   assert.equal(calls.length,1);
 });
 
