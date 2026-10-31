@@ -3,10 +3,10 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Sinda Nexus with governed AI orchestration and project portfolio intelligence",
+  "description": "Sinda Nexus with governed AI orchestration, project portfolio intelligence, and digital nano-neuro simulation preview",
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --check src/ai/generative-provider.js && node --check src/ai/project-memory.js && node --check src/ai/task-planner.js && node --check src/ai/approval-ledger.js && node --check src/ai/database/connector.js && node --check src/ai/orchestrator.js && node --check src/ai/evaluator.js && node --check src/ai/workspace-task-executor.js && node --check src/ai/runtime.js && node --check src/ai/index.js && node --check src/project-intelligence/portfolio.js && node --test"
+    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --check src/ai/generative-provider.js && node --check src/ai/project-memory.js && node --check src/ai/task-planner.js && node --check src/ai/approval-ledger.js && node --check src/ai/database/connector.js && node --check src/ai/orchestrator.js && node --check src/ai/evaluator.js && node --check src/ai/workspace-task-executor.js && node --check src/ai/runtime.js && node --check src/ai/index.js && node --check src/project-intelligence/portfolio.js && node --check src/nano-neuro/agent-registry.js && node --check src/nano-neuro/genome.js && node --check src/nano-neuro/neural-sensors.js && node --check src/nano-neuro/swarm.js && node --check src/nano-neuro/fusion.js && node --check src/nano-neuro/simulator.js && node --check test/nano-neuro.test.js && node --test"
   }
 }

@@ -14,3 +14,9 @@ export {
   findPotentialDuplicates,
   buildPortfolioSnapshot
 } from "../project-intelligence/portfolio.js";
+export { AgentRegistry } from "../nano-neuro/agent-registry.js";
+export { createGenome, mutateGenome, crossoverGenomes } from "../nano-neuro/genome.js";
+export { VirtualSensorHub } from "../nano-neuro/neural-sensors.js";
+export { SwarmCoordinator } from "../nano-neuro/swarm.js";
+export { fuseCapabilities } from "../nano-neuro/fusion.js";
+export { DEFAULT_SIMULATION, createSimulation, createVirtualPopulation } from "../nano-neuro/simulator.js";
