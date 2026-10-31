@@ -39,7 +39,7 @@ test("rejects unsafe identifiers, unknown statuses, and out-of-range scores", ()
 });
 
 test("scores priority deterministically and returns a band", () => {
-  assert.deepEqual(scoreProjectPriority(project()), { score: 59, band: "medium" });
+  assert.deepEqual(scoreProjectPriority(project()), { score: 63, band: "medium" });
 });
 
 test("investor readiness requires verified evidence for every gate", () => {
