@@ -68,7 +68,9 @@ export function createAuthService({ pool, sessionSecret, sessionTtlSeconds } = {
       );
       const user = result.rows[0];
       if (!user || !user.active || !(await verifyPassword(password, user.password_hash))) {
-        throw new Error("Invalid email or password.");
+        const error = new Error("Invalid email or password.");
+        error.status = 401;
+        throw error;
       }
       return { token:sessions.issue(user), user:{ id:user.id, organizationId:user.organization_id, email:user.email, displayName:user.display_name, role:user.role } };
     },
