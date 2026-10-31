@@ -36,7 +36,9 @@ export class DatabaseConnector {
     if (referenced.some(name => !this.allowedTables.has(name)) || (referenced.length && !referenced.includes(table))) {
       throw new Error("Every referenced table must be allow-listed and match the requested table scope.");
     }
-    const limitedSql = /\blimit\s+\d+\b/i.test(sql) ? sql : sql + " LIMIT " + this.maxRows;
+    const limitMatch = sql.match(/\blimit\s+(\d+)\b/i);
+    const safeLimit = limitMatch ? Math.min(Number(limitMatch[1]), this.maxRows) : this.maxRows;
+    const limitedSql = limitMatch ? sql.replace(/\blimit\s+\d+\b/i, "LIMIT " + safeLimit) : sql + " LIMIT " + safeLimit;
     const result = await this.adapter.query(limitedSql, params);
     const rows = Array.isArray(result) ? result : result?.rows;
     if (!Array.isArray(rows)) throw new Error("Database adapter returned an invalid row set.");
