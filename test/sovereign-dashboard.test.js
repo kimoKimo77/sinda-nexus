@@ -126,3 +126,15 @@ test("dashboard page and same-origin script are served with restrictive security
     assert.match(await script.text(),/api\/v1\/auth\/login/);
   });
 });
+
+test("tenant schema enforces row-level security on project-scoped records",()=>{
+  const sql=MIGRATIONS[0].sql;
+  for(const table of ["projects","project_members","agents","audit_events"]) {
+    assert.match(sql,new RegExp("ALTER TABLE "+table+" ENABLE ROW LEVEL SECURITY"));
+    assert.match(sql,new RegExp("ALTER TABLE "+table+" FORCE ROW LEVEL SECURITY"));
+  }
+  assert.match(sql,/sinda\.organization_id/);
+  assert.match(sql,/sinda\.user_id/);
+  assert.match(sql,/sinda\.project_id/);
+  assert.match(sql,/CREATE TABLE agents/);
+});
