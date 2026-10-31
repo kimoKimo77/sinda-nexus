@@ -56,6 +56,8 @@ test("database connector scopes SELECT, caps rows, and queues writes for approva
   });
   assert.deepEqual(await db.read({ table: "projects", sql: "SELECT id FROM projects" }), [{ id: 1 }, { id: 2 }]);
   assert.match(sqlSeen, /LIMIT 2$/);
+  await db.read({ table: "projects", sql: "SELECT id FROM projects LIMIT 999" });
+  assert.match(sqlSeen, /LIMIT 2$/);
   await assert.rejects(() => db.read({ table: "projects", sql: "SELECT id FROM users" }), /allow-listed/);
   await assert.rejects(() => db.read({ table: "projects", sql: "DELETE FROM projects" }), /SELECT/);
   const request = await db.requestWrite({ table: "projects", operation: "update", requestedBy: "user", reason: "edit project" });
