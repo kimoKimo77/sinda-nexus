@@ -8,10 +8,13 @@ if(!Number.isInteger(port)||port<1||port>65535) throw new Error("PORT must be an
 let server;
 if(process.env.SINDA_DATABASE_POOL_MODULE) {
   const adapterModule=await import(process.env.SINDA_DATABASE_POOL_MODULE);
-  const pool=adapterModule.pool ?? (typeof adapterModule.createPool==="function" ? await adapterModule.createPool({connectionString:process.env.DATABASE_URL}) : null);
-  if(!pool) throw new Error("SINDA_DATABASE_POOL_MODULE must export pool or createPool().");
+  const supplied=typeof adapterModule.createPool==="function" ? await adapterModule.createPool({connectionString:process.env.DATABASE_URL}) : adapterModule;
+  const pool=supplied.pool ?? supplied;
+  const migrationPool=supplied.migrationPool ?? pool;
+  if(!pool || typeof pool.query!=="function" || typeof pool.connect!=="function") throw new Error("SINDA_DATABASE_POOL_MODULE must export a PostgreSQL pool or createPool() result.");
   const application=await createSindaApplication({
     pool,
+    migrationPool,
     env:process.env,
     runSchemaMigrations:process.env.SINDA_RUN_MIGRATIONS==="true"
   });
