@@ -18,6 +18,7 @@ test("tenant RLS isolates projects and investment-adjacent records for a non-own
   const agentA=randomUUID(), agentB=randomUUID();
   try {
     await runMigrations({pool:owner});
+    await owner.query("GRANT SELECT ON projects, project_members, agents, audit_events TO sinda_runtime");
     const ownerClient=await owner.connect();
     try {
       await ownerClient.query("BEGIN");
@@ -65,6 +66,8 @@ test("tenant RLS isolates projects and investment-adjacent records for a non-own
     assert.deepEqual((await readAsA("SELECT id FROM agents ORDER BY id")).map(row=>row.id),[agentA]);
     assert.deepEqual((await readAsA("SELECT project_id FROM audit_events ORDER BY project_id")).map(row=>row.project_id),[projectA]);
     assert.equal((await readAsA("SELECT id FROM projects WHERE id=$1",[projectB])).length,0);
+    const privileges=await runtime.query("SELECT has_table_privilege(current_user, 'public.projects', 'INSERT') AS can_insert");
+    assert.equal(privileges.rows[0].can_insert,false);
   } finally {
     await Promise.all([owner.end(),runtime.end()]);
   }
