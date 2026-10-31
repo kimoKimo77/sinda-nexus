@@ -109,7 +109,8 @@ export function createSindaHttpServer({
         sendJson(response,405,{error:"method_not_allowed",requestId});
         return;
       }
-      if (!dashboard) {
+      const dashboardRoute=pathname==="/api/v1/auth/login" || pathname==="/api/v1/auth/me" || pathname==="/api/v1/projects" || /^\/api\/v1\/projects\/[0-9a-f-]{36}\/(dashboard|agents)$/i.test(pathname);
+      if(!dashboard && dashboardRoute) {
         sendJson(response,503,{error:"dashboard_not_configured",requestId});
         return;
       }
