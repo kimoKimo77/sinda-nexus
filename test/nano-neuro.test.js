@@ -57,7 +57,7 @@ test("agent registry blocks escalation, cross-project parenting, and invalid gen
   }), /project scope/);
   assert.throws(() => registry.createRoot({
     id: "bad-genome", projectId: "p", capabilities: [], genome: { schemaVersion: 1, seed: 1, traits: { adaptability: 1, learning: 1, stability: 1, extra: 1 } }
-  }), /trait allowlist/);
+  }), /Genome traits/);
 });
 
 test("registry enforces identity, capacity, child and depth quotas", () => {
