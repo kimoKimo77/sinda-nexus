@@ -114,6 +114,8 @@ export function createDashboardHandlers({ pool, auth } = {}) {
       }
       return inTenantTransaction(pool,identity,projectId,async client => {
         await requireProjectRole(client,projectId,identity.sub,["owner","admin","member"]);
+        const count=await client.query("SELECT count(*)::int AS count FROM agents WHERE project_id=$1",[projectId]);
+        if(count.rows[0].count>=100) { const error=new Error("Project agent limit reached."); error.status=429; throw error; }
         const id=randomUUID();
         const result=await client.query(
           "INSERT INTO agents(id,project_id,name,agent_type,status,config,created_by) VALUES($1,$2,$3,$4,'idle','{}'::jsonb,$5) RETURNING id,name,agent_type,status,created_at",
