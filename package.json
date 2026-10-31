@@ -1,0 +1,12 @@
+{
+  "name": "sinda-nexus",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Sinda Nexus with a policy-governed decision and workspace writing core",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/ai/policy.js && node --check src/ai/decision-engine.js && node --check src/ai/workspace-writer.js && node --test"
+  }
+}
