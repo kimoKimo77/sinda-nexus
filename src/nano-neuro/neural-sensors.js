@@ -18,7 +18,7 @@ export class VirtualSensorHub {
     if (typeof agentId !== "string" || !agentId || typeof projectId !== "string" || !projectId) {
       throw new TypeError("Agent and project are required");
     }
-    const agent = this.#registry.get(agentId);
+    const agent = this.#registry.get(agentId, projectId);
     if (!agent || agent.projectId !== projectId) throw new Error("Sensor source is not registered in this project");
     if (!SENSOR_TYPES.has(sensorType)) throw new Error("Only allow-listed virtual sensor types are supported");
     if (!Number.isFinite(value) || Math.abs(value) > 1_000_000) throw new RangeError("Synthetic sensor value is outside bounds");
