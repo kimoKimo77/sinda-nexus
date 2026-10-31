@@ -12,7 +12,7 @@
 | NNG-02 | Medium | Virtual sensor ingestion accepted unknown agent IDs and arbitrary project IDs; per-agent quotas were keyed only by agent ID. | Sensor hub now requires a registry, verifies the agent exists in the requested project, and keys quotas by project plus agent. |
 | NNG-03 | Medium | Capability fusion trusted caller-supplied agent objects, allowing fabricated capability sets. | Fusion now takes distinct agent IDs and resolves every source from the registry before intersecting capabilities. |
 | NNG-04 | High (scale) | Registry child quota counted by scanning the entire agent map on each spawn, making population creation quadratic. | Added O(1) parent child counters. Fan-out and depth remain bounded; population builder distributes agents under the fan-out cap. |
-| NNG-05 | Medium (scale) | Swarm per-agent task quotas also scanned all task assignments on each delegation. Constructor quotas were not range-validated. | Added project/agent indexed counters and validated total/per-agent limits. |
+| NNG-05 | Medium (scale) | Swarm per-agent task quotas also scanned all task assignments on each delegation. Constructor quotas were not range-validated. | Added project/agent indexed counters and validated total/per-project/per-agent limits. |\n| NNG-08 | Medium | Task IDs were global and a snapshot call could return assignments across projects. | Task IDs and quotas are project-qualified; snapshot now requires an explicit project scope and returns only that project. |
 | NNG-06 | Low | Static Preview used inline script/style and had no explicit restrictive CSP; hosting headers were undocumented. | Moved assets to same-origin files and added a no-network meta CSP. Documented required HTTP response headers that the static HTML cannot set. |
 | NNG-07 | Low | Genome mutation seed was not validated at every public entry point. | Seed validation is shared by create, mutation and crossover; trait schemas are exact and bounded. |
 
@@ -22,7 +22,7 @@
 - Child capability escalation, cross-project parenting, invalid digital genome schemas, and registry quotas are rejected.
 - Sensor events from unregistered agents or mismatched projects are rejected.
 - Fusion resolves real registry entries and rejects missing, duplicate, or cross-project sources.
-- Swarm task and per-agent quota limits are validated and indexed.
+- Swarm task and per-agent quota limits are validated and indexed. Identical task IDs can be used independently by different projects; snapshots require and enforce a project scope.
 - Static UI checks require a restrictive CSP, local assets, and no network, dynamic-code, or browser-storage primitives.
 
 ## Staged load protocol
