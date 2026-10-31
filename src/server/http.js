@@ -128,7 +128,7 @@ export function createSindaHttpServer({
       }
       sendJson(response,404,{error:"not_found",requestId});
     } catch(error) {
-      const status=Number.isInteger(error.status)?error.status:400;
+      const status=Number.isInteger(error.status)?error.status:500;
       sendJson(response,status,{error:status>=500?"internal_error":error.message,requestId});
     }
   });
