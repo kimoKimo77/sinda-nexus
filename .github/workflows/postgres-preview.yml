@@ -1,0 +1,72 @@
+name: PostgreSQL Preview Integration
+
+on:
+  push:
+    branches:
+      - feat/postgres-preview-integration
+  pull_request:
+    branches:
+      - feat/sinda-durable-rbac-security
+    paths:
+      - "src/ai/database/**"
+      - "test/**"
+      - "docs/POSTGRES-PREVIEW-TESTING.md"
+      - ".github/workflows/postgres-preview.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-preview:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-test-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      SINDA_PG_TEST_URL: postgresql://sinda_preview_runner:preview-test-only@localhost:5432/sinda_preview_test
+      SINDA_PG_RESTORE_TEST_URL: postgresql://sinda_preview_runner:preview-test-only@localhost:5432/sinda_restore_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci
+      - name: Install PostgreSQL test driver without changing manifests
+        run: npm install --no-save --package-lock=false pg
+      - name: Create isolated disposable databases and least-privilege test role
+        run: |
+          PGPASSWORD=postgres-test-only psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE sinda_preview_runner LOGIN PASSWORD 'preview-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+          CREATE DATABASE sinda_preview_test OWNER sinda_preview_runner;
+          CREATE DATABASE sinda_restore_test OWNER sinda_preview_runner;
+          SQL
+      - name: Run unit and PostgreSQL integration tests
+        run: npm test
+      - name: Backup disposable PostgreSQL database
+        run: |
+          umask 077
+          pg_dump --format=custom --no-owner --no-privileges --file="$RUNNER_TEMP/sinda-preview.backup" "$SINDA_PG_TEST_URL"
+          pg_restore --list "$RUNNER_TEMP/sinda-preview.backup" >/dev/null
+      - name: Restore backup into a separate disposable database
+        run: |
+          pg_restore --no-owner --no-privileges --dbname="$SINDA_PG_RESTORE_TEST_URL" "$RUNNER_TEMP/sinda-preview.backup"
+          psql "$SINDA_PG_RESTORE_TEST_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command="SELECT to_regclass('public.sinda_project_memory'), to_regclass('public.sinda_approval_ledger');"
+      - name: Verify restored tables exist
+        run: |
+          result=$(psql "$SINDA_PG_RESTORE_TEST_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command="SELECT (to_regclass('public.sinda_project_memory') IS NOT NULL)::int + (to_regclass('public.sinda_approval_ledger') IS NOT NULL)::int;")
+          rows=$(psql "$SINDA_PG_RESTORE_TEST_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command="SELECT (SELECT count(*) FROM sinda_project_memory) + (SELECT count(*) FROM sinda_approval_ledger);")
+          test "$result" = "2"
+          test "$rows" -ge "4"
