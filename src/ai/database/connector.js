@@ -17,7 +17,7 @@ export class SqlitePreparedAdapter {
   }
   async query(sql, params = []) { return this.database.prepare(sql).all(...params); }
   async execute(sql, params = []) {
-    if (/^\\s*create\\s+(table|index)/i.test(sql) && typeof this.database.exec === "function") { this.database.exec(sql); return { changes: 0 }; }
+    if (sql.trimStart().toLowerCase().startsWith("create ") && typeof this.database.exec === "function") { this.database.exec(sql); return { changes: 0 }; }
     const result = this.database.prepare(sql).run(...params);
     return { changes: result.changes ?? 0, lastInsertRowid: result.lastInsertRowid };
   }

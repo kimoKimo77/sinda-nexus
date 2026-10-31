@@ -62,7 +62,7 @@ export class PersistentProjectMemory {
       `SELECT id, project_id, content, source, tags_json, created_at FROM ${TABLES.memory} WHERE project_id = ${p} ORDER BY created_at DESC LIMIT ${cap}`,
       [scope]
     );
-    const terms = String(query).toLowerCase().split(/\\s+/).filter(Boolean);
+    const terms = String(query).toLowerCase().split(/\s+/).filter(Boolean);
     return rowsOf(result).map(row => ({
       id: row.id, projectId: row.project_id, content: row.content, source: row.source,
       tags: JSON.parse(row.tags_json || "[]"), createdAt: row.created_at

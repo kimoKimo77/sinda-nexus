@@ -15,7 +15,8 @@ function fakeDb() {
       if (sql.startsWith("UPDATE sinda_approval_ledger")) {
         const row=approvals.get(params[params.length-2]);
         if (!row || row.status!==params[params.length-1]) return { changes:0 };
-        const setNames=[...sql.matchAll(/([a-z_]+) = \?/g)].map(x=>x[1]).filter(x=>x!=="status");
+        const clause=sql.split(" WHERE ")[0].split(" SET ")[1];
+        const setNames=[...clause.matchAll(/([a-z_]+) = \?/g)].map(x=>x[1]);
         setNames.forEach((name,i)=>row[name]=params[i]);
         row.status=params[setNames.length]; return { changes:1 };
       }
