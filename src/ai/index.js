@@ -7,3 +7,5 @@ export { SindaOrchestrator } from "./orchestrator.js";
 export { PlanEvaluator, validateEvaluation } from "./evaluator.js";
 export { createWorkspaceTaskExecutor } from "./workspace-task-executor.js";
 export { createSindaAI } from "./runtime.js";
+export { PersistentProjectMemory, PersistentApprovalLedger, migrateDurableStores, durableSchema } from "./database/durable-repositories.js";
+export { createAuthorizedHostHandlers, createUntrustedContextEnvelope } from "./host-adapter.js";
