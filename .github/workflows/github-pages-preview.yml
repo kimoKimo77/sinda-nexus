@@ -1,6 +1,9 @@
 name: Publish static Preview to GitHub Pages
 
 on:
+  push:
+    branches:
+      - deploy/github-pages-preview
   workflow_dispatch:
 
 permissions:
