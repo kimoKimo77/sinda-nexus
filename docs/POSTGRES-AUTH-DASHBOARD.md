@@ -24,7 +24,7 @@ const { server } = await createSindaApplication({ pool, env: process.env });
 server.listen(Number(process.env.PORT || 3000), "127.0.0.1");
 ```
 
-The repository intentionally does not bundle a PostgreSQL driver yet. This keeps dependency lockfiles unchanged until the deployment environment and supported driver version are explicitly selected. The factory and migration runner are tested with injected pools; a live PostgreSQL integration run is still required before deployment.
+The repository intentionally does not bundle a PostgreSQL driver yet. This keeps dependency lockfiles unchanged until the deployment environment and supported driver version are explicitly selected. For `npm start`, set `SINDA_DATABASE_POOL_MODULE` to an absolute file URL for a trusted adapter module that exports `pool` or `createPool()`. Also set `DATABASE_URL` and a random `SINDA_SESSION_SECRET` (at least 32 bytes). Set `SINDA_RUN_MIGRATIONS=true` only during a planned migration window after a backup; otherwise run migrations separately. If the pool module is absent, the server deliberately starts in liveness-only mode and does not expose authenticated dashboard routes. The factory and migration runner are tested with injected pools; a live PostgreSQL integration run is still required before deployment.
 
 ## Provision the first owner
 
