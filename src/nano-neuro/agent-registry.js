@@ -2,6 +2,27 @@ const CAPABILITIES = new Set(["analyze", "classify", "simulate", "summarize"]);
 const ID = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,63}$/;
 const GENOME_TRAITS = ["adaptability", "learning", "stability"];
 
+function readPlainDataRecord(value, expectedKeys = null, label = "Record") {
+  if (!value || typeof value !== "object" || Array.isArray(value)
+    || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
+    throw new TypeError(`${label} must be a plain object`);
+  }
+  const keys = Reflect.ownKeys(value);
+  if (keys.some(key => typeof key !== "string")) throw new TypeError(`${label} cannot contain symbol keys`);
+  if (expectedKeys && (keys.length !== expectedKeys.length || keys.some(key => !expectedKeys.includes(key)))) {
+    throw new TypeError(`${label} has an unsupported schema`);
+  }
+  const result = {};
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, "value")) {
+      throw new TypeError(`${label} cannot contain accessors or hidden fields`);
+    }
+    result[key] = descriptor.value;
+  }
+  return result;
+}
+
 function cleanCapabilities(values = []) {
   if (!Array.isArray(values) || values.length > CAPABILITIES.size) throw new TypeError("Invalid capabilities");
   const result = [...new Set(values)];
@@ -11,36 +32,34 @@ function cleanCapabilities(values = []) {
 
 function cleanGenome(genome) {
   if (genome === null) return null;
-  if (!genome || typeof genome !== "object" || Array.isArray(genome)
-    || Object.getPrototypeOf(genome) !== Object.prototype
-    || genome.schemaVersion !== 1 || !Number.isSafeInteger(genome.seed)
-    || genome.seed < 0 || genome.seed > 0xffffffff) {
+  const data = readPlainDataRecord(genome, ["schemaVersion", "seed", "traits"], "Genome");
+  if (data.schemaVersion !== 1 || !Number.isSafeInteger(data.seed) || data.seed < 0 || data.seed > 0xffffffff) {
     throw new TypeError("Genome must be a version-1 digital genome");
   }
-  const traits = genome.traits;
-  if (!traits || typeof traits !== "object" || Array.isArray(traits)
-    || Object.getPrototypeOf(traits) !== Object.prototype
-    || Object.keys(traits).length !== GENOME_TRAITS.length
-    || Object.keys(traits).some(key => !GENOME_TRAITS.includes(key))
-    || GENOME_TRAITS.some(key => !Number.isFinite(traits[key]) || traits[key] < 0 || traits[key] > 1)) {
+  const traits = readPlainDataRecord(data.traits, GENOME_TRAITS, "Genome traits");
+  if (GENOME_TRAITS.some(key => !Number.isFinite(traits[key]) || traits[key] < 0 || traits[key] > 1)) {
     throw new RangeError("Genome traits must be the bounded digital trait allowlist");
   }
   return Object.freeze({
     schemaVersion: 1,
-    seed: genome.seed,
+    seed: data.seed,
     traits: Object.freeze(Object.fromEntries(GENOME_TRAITS.map(key => [key, traits[key]])))
   });
 }
 
 function cleanApproval(approval) {
-  if (!approval || typeof approval !== "object" || Array.isArray(approval)
-    || (Object.getPrototypeOf(approval) !== Object.prototype && Object.getPrototypeOf(approval) !== null)) {
-    throw new TypeError("Approval ticket must be a plain JSON object");
+  const ticket = readPlainDataRecord(approval, null, "Approval ticket");
+  const keys = Object.keys(ticket);
+  if (keys.length < 1 || keys.length > 8) throw new RangeError("Approval ticket must contain between 1 and 8 fields");
+  for (const [key, value] of Object.entries(ticket)) {
+    if (!/^[a-zA-Z][a-zA-Z0-9_]{0,31}$/.test(key)
+      || !(value === null || ["string", "number", "boolean"].includes(typeof value))
+      || (typeof value === "string" && value.length > 512)
+      || (typeof value === "number" && !Number.isFinite(value))) {
+      throw new TypeError("Approval ticket fields must be small scalar values");
+    }
   }
-  let serialized;
-  try { serialized = JSON.stringify(approval); } catch { throw new TypeError("Approval ticket must be serializable"); }
-  if (!serialized || serialized.length > 4096) throw new RangeError("Approval ticket is empty or too large");
-  return Object.freeze(JSON.parse(serialized));
+  return Object.freeze(ticket);
 }
 
 export class AgentRegistry {
@@ -101,8 +120,10 @@ export class AgentRegistry {
   }
 
   get(id) { return this.#agents.get(id) ?? null; }
+
   list({ projectId } = {}) {
-    return [...this.#agents.values()].filter(agent => !projectId || agent.projectId === projectId);
+    if (typeof projectId !== "string" || !ID.test(projectId)) throw new TypeError("A valid project scope is required");
+    return [...this.#agents.values()].filter(agent => agent.projectId === projectId);
   }
 
   #validateIdentity(id, projectId) {
