@@ -6,7 +6,8 @@ export class PostgresPoolAdapter {
     if (!pool || typeof pool.query !== "function") throw new TypeError("A PostgreSQL pool is required.");
     this.pool = pool;
   }
-  async query(sql, params) { return this.pool.query(sql, params); }
+  async query(sql, params = []) { return this.pool.query(sql, params); }
+  async execute(sql, params = []) { const result = await this.pool.query(sql, params); return { rowCount: result.rowCount ?? 0 }; }
 }
 
 export class SqlitePreparedAdapter {
@@ -15,6 +16,11 @@ export class SqlitePreparedAdapter {
     this.database = database;
   }
   async query(sql, params = []) { return this.database.prepare(sql).all(...params); }
+  async execute(sql, params = []) {
+    if (sql.trimStart().toLowerCase().startsWith("create ") && typeof this.database.exec === "function") { this.database.exec(sql); return { changes: 0 }; }
+    const result = this.database.prepare(sql).run(...params);
+    return { changes: result.changes ?? 0, lastInsertRowid: result.lastInsertRowid };
+  }
 }
 
 export class DatabaseConnector {
