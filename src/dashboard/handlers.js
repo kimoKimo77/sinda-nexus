@@ -69,8 +69,7 @@ export function createDashboardHandlers({ pool, auth } = {}) {
       const identity=requireIdentity(auth,request);
       return inTenantTransaction(pool,identity,null,async client => {
         const result=await client.query(
-          `SELECT p.id,p.name,p.description,p.status,p.created_at,pm.role,
-            (SELECT count(*)::int FROM agents a WHERE a.project_id=p.id) AS agent_count
+          `SELECT p.id,p.name,p.description,p.status,p.created_at,pm.role
            FROM projects p JOIN project_members pm ON pm.project_id=p.id
            WHERE pm.user_id=$1 ORDER BY p.created_at DESC LIMIT 100`,
           [identity.sub]
