@@ -16,8 +16,11 @@ export function validatePlan(value) {
     ids.add(id);
     return { id, action, description, dependsOn: Array.isArray(task.dependsOn) ? task.dependsOn.map(String) : [], risk: task.risk === "high" ? "high" : task.risk === "medium" ? "medium" : "low" };
   });
+  const completed = new Set();
   for (const task of tasks) {
     if (task.dependsOn.some(dep => !ids.has(dep) || dep === task.id)) throw new TypeError("Task dependency is missing or self-referential.");
+    if (task.dependsOn.some(dep => !completed.has(dep))) throw new TypeError("Tasks must be ordered after their dependencies.");
+    completed.add(task.id);
   }
   return { summary: String(value.summary ?? "Generated project plan").slice(0, 500), tasks };
 }
@@ -31,7 +34,7 @@ export class TaskPlanner {
   async createPlan({ goal, projectContext = [], constraints = [] } = {}) {
     if (typeof goal !== "string" || !goal.trim()) throw new TypeError("A task goal is required.");
     const result = await this.provider.generateJSON({
-      system: "You are a careful software planning assistant. Return JSON only with shape {summary:string,tasks:[{id,action,description,dependsOn,risk}]}. Allowed actions: analyze, read, write, test, evaluate. Prefer small reversible tasks. Never propose deployment, deletion, financial transactions, credential access, or permission escalation. Mark uncertain/high-impact tasks risk high.",
+      system: "You are a careful software planning assistant. Return JSON only with shape {summary:string,tasks:[{id,action,description,dependsOn,risk}]}. Allowed actions: analyze, read, write, test, evaluate. Prefer small reversible tasks. Put each dependency before the task that depends on it. Never propose deployment, deletion, financial transactions, credential access, or permission escalation. Mark uncertain/high-impact tasks risk high.",
       input: JSON.stringify({ goal, projectContext, constraints })
     });
     return validatePlan(result);
