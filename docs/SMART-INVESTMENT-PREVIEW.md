@@ -5,7 +5,7 @@
 - Responsive Arabic-first web/mobile dashboard.
 - Markets: stocks, crypto, gold/metals, forex and real estate.
 - Read-only data access and analysis only.
-- Existing Sinda authentication is reused; investment endpoints require an authenticated bearer session.
+- Existing Sinda authentication is reused; protected requests validate the signed bearer session and re-check the account's active state and current database role.
 - Preview only. This feature does not authorize production deployment.
 
 ## Safety boundary
@@ -38,7 +38,7 @@ Run:
 - `npm run check`
 - `npm test`
 
-The dedicated tests cover authentication, the five-market catalog, missing-provider behavior, provider validation and read-only HTTP method enforcement. A green unit suite does not prove live provider accuracy, PostgreSQL RLS enforcement, deployment security or production readiness.
+The dedicated tests cover authentication, active-account and role revalidation, the five-market catalog, missing-provider behavior, provider validation and read-only HTTP method enforcement. A green unit suite does not prove live provider accuracy, PostgreSQL RLS enforcement, deployment security or production readiness.
 
 ## Release gates not satisfied yet
 
