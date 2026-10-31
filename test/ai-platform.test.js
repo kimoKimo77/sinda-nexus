@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { GenerativeProvider } from "../src/ai/generative-provider.js";
 import { InMemoryProjectMemory } from "../src/ai/project-memory.js";
-import { TaskPlanner, validatePlan } from "../src/ai/task-planner.js";
+import { validatePlan } from "../src/ai/task-planner.js";
 import { ApprovalLedger } from "../src/ai/approval-ledger.js";
 import { DatabaseConnector } from "../src/ai/database/connector.js";
 import { SindaOrchestrator } from "../src/ai/orchestrator.js";
@@ -24,25 +24,39 @@ test("project memory is isolated by project and searchable", async () => {
   assert.equal((await memory.search({ projectId: "beta", query: "preview" })).length, 0);
 });
 
-test("planner validates tasks and rejects unknown actions", () => {
+test("planner validates tasks and rejects unsupported or out-of-order dependencies", () => {
   assert.equal(validatePlan({ tasks: [{ id: "a", action: "test", description: "Run tests" }] }).tasks.length, 1);
   assert.throws(() => validatePlan({ tasks: [{ id: "a", action: "deploy", description: "Deploy" }] }), /Unsupported/);
+  assert.throws(() => validatePlan({ tasks: [
+    { id: "a", action: "read", description: "Read", dependsOn: ["b"] },
+    { id: "b", action: "read", description: "Read dependency" }
+  ] }), /ordered/);
 });
 
-test("approval ledger records and enforces one-way approval state", async () => {
+test("approval ledger records, binds, and consumes approval once", async () => {
   const events = [];
   const ledger = new ApprovalLedger({ auditLog: e => events.push(e) });
   const request = await ledger.request({ action: "deploy", target: "preview", requestedBy: "user", reason: "release" });
   assert.equal((await ledger.approve(request.id, { approvedBy: "owner" })).status, "approved");
-  await assert.rejects(() => ledger.reject(request.id, { rejectedBy: "owner" }), /no longer pending/);
-  assert.deepEqual(events.map(e => e.event), ["approval.requested", "approval.granted"]);
+  await assert.rejects(() => ledger.consumeApproved(request.id, { action: "deploy", target: "production", consumedBy: "runner" }), /does not match/);
+  assert.equal((await ledger.consumeApproved(request.id, { action: "deploy", target: "preview", consumedBy: "runner" })).status, "consumed");
+  await assert.rejects(() => ledger.consumeApproved(request.id, { action: "deploy", target: "preview", consumedBy: "runner" }), /approved request/);
+  assert.deepEqual(events.map(e => e.event), ["approval.requested", "approval.granted", "approval.consumed"]);
 });
 
-test("database connector allows allow-listed SELECT and blocks writes", async () => {
+test("database connector scopes SELECT, caps rows, and queues writes for approval", async () => {
   let calls = 0;
+  let sqlSeen = "";
   const approvals = new ApprovalLedger();
-  const db = new DatabaseConnector({ adapter: { query: async () => { calls++; return [{ id: 1 }, { id: 2 }]; } }, allowedTables: ["projects"], approvalLedger: approvals });
+  const db = new DatabaseConnector({
+    adapter: { query: async sql => { calls++; sqlSeen = sql; return [{ id: 1 }, { id: 2 }, { id: 3 }]; } },
+    allowedTables: ["projects"],
+    maxRows: 2,
+    approvalLedger: approvals
+  });
   assert.deepEqual(await db.read({ table: "projects", sql: "SELECT id FROM projects" }), [{ id: 1 }, { id: 2 }]);
+  assert.match(sqlSeen, /LIMIT 2$/);
+  await assert.rejects(() => db.read({ table: "projects", sql: "SELECT id FROM users" }), /allow-listed/);
   await assert.rejects(() => db.read({ table: "projects", sql: "DELETE FROM projects" }), /SELECT/);
   const request = await db.requestWrite({ table: "projects", operation: "update", requestedBy: "user", reason: "edit project" });
   assert.equal((await approvals.get(request.id)).status, "pending");
@@ -62,4 +76,5 @@ test("orchestrator plans from scoped memory and executes only allowed tasks", as
   const result = await engine.execute({ projectId: "p1", plan: plan.plan, actor: "owner" });
   assert.deepEqual(executed, ["a"]);
   assert.equal(result.results[1].status, "approval_required");
+  await assert.rejects(() => engine.execute({ projectId: "p1", plan: { tasks: [{ id: "x", action: "deploy", description: "Run" }] } }), /Unsupported/);
 });
