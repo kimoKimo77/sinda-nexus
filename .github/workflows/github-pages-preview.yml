@@ -1,6 +1,9 @@
 name: Validate and optionally publish static Preview
 
 on:
+  pull_request:
+    branches:
+      - deploy/github-pages-preview
   workflow_dispatch:
     inputs:
       publish_pages:
