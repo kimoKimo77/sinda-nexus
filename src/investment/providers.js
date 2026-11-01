@@ -43,7 +43,7 @@ export function createMarketDataProvider({ env = process.env, fetchImpl = global
       const data = await get("https://api.frankfurter.dev/v2/rates?base=USD&quotes=SAR,EUR,GBP,JPY");
       const rows = Array.isArray(data) ? data : data.rates;
       if (!Array.isArray(rows) || !rows.length) throw new TypeError("Frankfurter returned no rates.");
-      const asOf = rows[0].date + "T16:00:00.000Z";
+      const asOf = rows[0].date + "T00:00:00.000Z";
       return snapshot("forex", "Frankfurter reference exchange rates (daily; not executable quotes)", asOf, rows.map(row => ({
         symbol: "USD/" + row.quote, name: "US dollar to " + row.quote, price: requireNumber(row.rate, "FX rate"), currency: row.quote
       })));
