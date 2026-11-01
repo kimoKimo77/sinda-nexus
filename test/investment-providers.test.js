@@ -63,7 +63,9 @@ test("credentialed sources send tokens only in server-side request headers and n
 
 test("invalid provider responses fail closed", async () => {
   const provider=createMarketDataProvider({fetchImpl:mockFetch({
-    "ticker/price?symbol=BTCUSDT":{symbol:"BTCUSDT",price:"NaN"}
+    "ticker/price?symbol=BTCUSDT":{symbol:"BTCUSDT",price:"NaN"},
+    "ticker/price?symbol=ETHUSDT":{symbol:"ETHUSDT",price:"NaN"},
+    "ticker/price?symbol=SOLUSDT":{symbol:"SOLUSDT",price:"NaN"}
   },[])});
   await assert.rejects(()=>provider.getSnapshot("crypto"),/Invalid crypto price/);
 });
