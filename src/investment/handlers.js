@@ -14,8 +14,13 @@ function safeSnapshot(snapshot, market) {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
     throw new TypeError("Market data provider returned an invalid snapshot.");
   }
-  if (snapshot.market !== market || typeof snapshot.asOf !== "string" || typeof snapshot.source !== "string") {
+  if (snapshot.market !== market || typeof snapshot.asOf !== "string" || typeof snapshot.source !== "string" || !snapshot.source.trim()) {
     throw new TypeError("Market data provider omitted required provenance fields.");
+  }
+  const observedAt = Date.parse(snapshot.asOf);
+  const now = Date.now();
+  if (!Number.isFinite(observedAt) || observedAt > now + 5 * 60_000 || now - observedAt > 400 * 24 * 60 * 60_000) {
+    throw new TypeError("Market data provider returned an invalid or stale timestamp.");
   }
   if (!Array.isArray(snapshot.items)) throw new TypeError("Market data provider must return an items array.");
   return {
