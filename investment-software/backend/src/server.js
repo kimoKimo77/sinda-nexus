@@ -1,3 +1,4 @@
+import "dotenv/config";
 import {createPool} from "./db.js";
 import {createApp} from "./app.js";
 const pool=createPool();const app=createApp({pool});const port=Number(process.env.PORT)||4180;
