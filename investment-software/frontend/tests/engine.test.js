@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {createProject,validateProject,updateProject,deleteProject,queryProjects,summarize,importProjects,exportProjects,seedProjects} from "../engine.js";
+test("creates valid project and trims fields",()=>{const p=createProject({name:"  Demo  ",category:"applications",status:"draft",description:"  test  "},new Date("2026-01-02"));assert.equal(p.name,"Demo");assert.equal(p.description,"test");assert.equal(p.updatedAt,"2026-01-02");});
+test("rejects invalid category and short name",()=>{assert.ok(validateProject({name:"x",category:"unknown",status:"draft",description:""}).length>=2);});
+test("updates only matching project",()=>{const next=updateProject(seedProjects,"app-001",{name:"Updated"});assert.equal(next[0].name,"Updated");assert.equal(seedProjects[0].name,"SINDA Workspace");});
+test("deletes project without mutating source",()=>{const next=deleteProject(seedProjects,"app-001");assert.equal(next.length,seedProjects.length-1);assert.equal(seedProjects.length,6);});
+test("filters by category, status and search",()=>{const found=queryProjects(seedProjects,{category:"applications",status:"active",search:"workspace"});assert.equal(found.length,1);});
+test("summarizes category counts and statuses",()=>{const s=summarize(seedProjects);assert.equal(s.total,6);assert.equal(s.active,2);assert.equal(s.byCategory.forums,1);});
+test("round-trips JSON export/import",()=>{const imported=importProjects(exportProjects(seedProjects));assert.equal(imported.length,seedProjects.length);assert.equal(imported[0].name,seedProjects[0].name);});
+test("rejects malformed import payload",()=>{assert.throws(()=>importProjects('{"wrong":[]}'));});
