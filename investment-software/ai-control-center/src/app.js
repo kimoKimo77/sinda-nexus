@@ -3,6 +3,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { timingSafeEqual } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { encryptSecret } from "./crypto.js";
 
 const credentialInput = z.object({
@@ -23,6 +25,8 @@ export function createApp({ pool }) {
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(express.json({ limit: "8kb", strict: true }));
+  const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../web");
+  app.use(express.static(webDir, { index: "index.html", dotfiles: "deny", fallthrough: true }));
   const origins = (process.env.CORS_ORIGIN || "").split(",").map(v => v.trim()).filter(Boolean);
   app.use((req, res, next) => {
     const origin = req.get("origin");
