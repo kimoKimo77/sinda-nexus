@@ -1,0 +1,24 @@
+name: SINDA AI Control Center Preview
+on:
+  push:
+    branches: ["feat/sinda-ai-control-center-preview"]
+    paths: ["investment-software/ai-control-center/**"]
+  pull_request:
+    paths: ["investment-software/ai-control-center/**"]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: investment-software/ai-control-center
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: investment-software/ai-control-center/package.json
+      - run: npm install --ignore-scripts
+      - run: npm test
