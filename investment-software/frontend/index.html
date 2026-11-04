@@ -1,59 +1,7 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <meta name="description" content="SINDA unified digital products workspace">
-  <title>SINDA | لوحة التحكم الموحدة</title>
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="SINDA home"><span class="brand-mark">S</span><span><strong>SINDA</strong><small data-i18n="workspace">مساحة العمل</small></span></a>
-      <div class="workspace-switch"><span class="workspace-dot"></span><span data-i18n="workspaceName">منظومة سيندا</span><span class="chevron">⌄</span></div>
-      <nav class="nav" aria-label="Main navigation">
-        <p class="nav-label" data-i18n="overview">نظرة عامة</p>
-        <button class="nav-link active" data-view="overview"><span class="nav-icon">▦</span><span data-i18n="dashboard">لوحة التحكم</span></button>
-        <p class="nav-label" data-i18n="manage">إدارة المنتجات</p>
-        <button class="nav-link" data-view="applications"><span class="nav-icon">▣</span><span data-i18n="applications">التطبيقات</span><span class="nav-count">4</span></button>
-        <button class="nav-link" data-view="websites"><span class="nav-icon">◎</span><span data-i18n="websites">المواقع الإلكترونية</span></button>
-        <button class="nav-link" data-view="forums"><span class="nav-icon">◌</span><span data-i18n="forums">المنتديات</span></button>
-        <button class="nav-link" data-view="stores"><span class="nav-icon">◇</span><span data-i18n="stores">المتاجر الرقمية</span></button>
-        <button class="nav-link" data-view="social"><span class="nav-icon">⌁</span><span data-i18n="social">التواصل الاجتماعي</span></button>
-        <p class="nav-label" data-i18n="system">النظام</p>
-        <button class="nav-link" data-view="reports"><span class="nav-icon">▤</span><span data-i18n="reports">التقارير والتحليلات</span></button>
-        <button class="nav-link" data-view="settings"><span class="nav-icon">⚙</span><span data-i18n="settings">الإعدادات</span></button>
-      </nav>
-      <div class="sidebar-bottom"><div class="help-card"><span class="help-icon">✦</span><strong data-i18n="helpTitle">هل تحتاج إلى مساعدة؟</strong><p data-i18n="helpText">اطّلع على دليل استخدام مساحة العمل.</p><a href="../docs/digital-products-design.md" data-i18n="helpLink">فتح الدليل ←</a></div><div class="profile"><div class="avatar">S</div><span><strong data-i18n="demoUser">مسؤول تجريبي</strong><small>demo@sinda.local</small></span><span class="more">•••</span></div></div>
-    </aside>
-    <main class="main">
-      <header class="topbar"><button class="icon-button mobile-menu" id="menuToggle" aria-label="Toggle menu">☰</button><div class="breadcrumbs"><span data-i18n="workspaceName">منظومة سيندا</span><span>/</span><strong id="crumb" data-i18n="dashboard">لوحة التحكم</strong></div><div class="top-actions"><span class="environment"><i></i><span data-i18n="demoMode">وضع تجريبي</span></span><button class="icon-button" aria-label="Notifications">♧<b class="notification-dot"></b></button><button class="language-button" id="languageToggle">EN</button></div></header>
-      <section class="content">
-        <div class="welcome-row"><div><p class="eyebrow" data-i18n="welcomeEyebrow">مساحة عملك الرقمية</p><h1 data-i18n="welcomeTitle">مرحباً بك في SINDA</h1><p class="muted" data-i18n="welcomeSubtitle">نظرة موحدة لإدارة منتجاتك الرقمية من مكان واحد.</p></div><button class="primary-button" id="createButton"><span>＋</span><span data-i18n="createNew">إنشاء مشروع</span></button></div>
-        <div class="notice"><span class="notice-icon">ⓘ</span><span data-i18n="demoNotice">هذه معاينة ببيانات تجريبية. لا توجد اتصالات خارجية أو عمليات نشر أو مدفوعات حقيقية.</span><button id="dismissNotice" aria-label="Dismiss">×</button></div>
-        <div class="section-heading"><div><h2 data-i18n="snapshot">ملخص المنظومة</h2><p data-i18n="snapshotSub">مؤشرات توضيحية لحالة مساحة العمل.</p></div><span class="period" data-i18n="sampleData">بيانات نموذجية</span></div>
-        <div class="stats-grid">
-          <article class="stat-card"><div class="stat-top"><span data-i18n="totalProjects">إجمالي المشاريع</span><span class="stat-symbol purple">▦</span></div><strong>12</strong><small><span class="trend">+2</span> <span data-i18n="thisMonth">هذا الشهر</span></small></article>
-          <article class="stat-card"><div class="stat-top"><span data-i18n="activeProducts">المنتجات النشطة</span><span class="stat-symbol green">↗</span></div><strong>08</strong><small data-i18n="acrossCategories">عبر الفئات الخمس</small></article>
-          <article class="stat-card"><div class="stat-top"><span data-i18n="drafts">مسودات قيد العمل</span><span class="stat-symbol orange">✎</span></div><strong>03</strong><small data-i18n="needReview">تحتاج إلى مراجعة</small></article>
-          <article class="stat-card"><div class="stat-top"><span data-i18n="tasks">المهام المكتملة</span><span class="stat-symbol blue">✓</span></div><strong>24</strong><small data-i18n="samplePeriod">ضمن الفترة النموذجية</small></article>
-        </div>
-        <div class="section-heading categories-heading"><div><h2 data-i18n="yourProducts">منتجاتك الرقمية</h2><p data-i18n="manageFromHere">اختر فئة للانتقال إلى مساحة إدارتها.</p></div><button class="text-button" id="viewAll" data-i18n="viewAll">عرض الكل ←</button></div>
-        <div class="products-grid">
-          <button class="product-card" data-view="applications"><span class="product-icon icon-purple">▣</span><span class="product-copy"><strong data-i18n="applications">التطبيقات</strong><small data-i18n="appsDesc">إدارة تطبيقات الويب والخدمات</small><b>04 <em data-i18n="projects">مشاريع</em></b></span><span class="arrow">↗</span></button>
-          <button class="product-card" data-view="websites"><span class="product-icon icon-blue">◎</span><span class="product-copy"><strong data-i18n="websites">المواقع الإلكترونية</strong><small data-i18n="sitesDesc">مواقعك وصفحاتك الرقمية</small><b>02 <em data-i18n="projects">مشاريع</em></b></span><span class="arrow">↗</span></button>
-          <button class="product-card" data-view="forums"><span class="product-icon icon-orange">◌</span><span class="product-copy"><strong data-i18n="forums">المنتديات</strong><small data-i18n="forumsDesc">المجتمعات والنقاشات</small><b>01 <em data-i18n="projects">مشروع</em></b></span><span class="arrow">↗</span></button>
-          <button class="product-card" data-view="stores"><span class="product-icon icon-green">◇</span><span class="product-copy"><strong data-i18n="stores">المتاجر الرقمية</strong><small data-i18n="storesDesc">الكتالوجات والطلبات التجريبية</small><b>02 <em data-i18n="projects">مشاريع</em></b></span><span class="arrow">↗</span></button>
-          <button class="product-card" data-view="social"><span class="product-icon icon-pink">⌁</span><span class="product-copy"><strong data-i18n="social">التواصل الاجتماعي</strong><small data-i18n="socialDesc">المحتوى والحسابات المرتبطة</small><b>03 <em data-i18n="channels">قنوات</em></b></span><span class="arrow">↗</span></button>
-        </div>
-        <div class="bottom-grid"><section class="panel"><div class="panel-heading"><div><h2 data-i18n="recentActivity">النشاط الأخير</h2><p data-i18n="recentSub">آخر التحديثات داخل مساحة العمل.</p></div><button class="text-button" data-i18n="allActivity">كل النشاط</button></div><div class="activity-list"><div class="activity-item"><span class="activity-bullet purple-bg">▣</span><span><strong data-i18n="activityOne">تم تحديث نموذج التطبيق</strong><small data-i18n="activityOneTime">منذ ساعتين · التطبيقات</small></span><span class="status status-draft" data-i18n="draft">مسودة</span></div><div class="activity-item"><span class="activity-bullet blue-bg">◎</span><span><strong data-i18n="activityTwo">إضافة صفحة تعريفية جديدة</strong><small data-i18n="activityTwoTime">أمس · المواقع</small></span><span class="status status-review" data-i18n="review">مراجعة</span></div><div class="activity-item"><span class="activity-bullet green-bg">◇</span><span><strong data-i18n="activityThree">مراجعة كتالوج المتجر التجريبي</strong><small data-i18n="activityThreeTime">قبل يومين · المتاجر</small></span><span class="status status-done" data-i18n="completed">مكتمل</span></div></div></section><section class="panel progress-panel"><div class="panel-heading"><div><h2 data-i18n="projectHealth">حالة المشاريع</h2><p data-i18n="healthSub">توزيع توضيحي للمشاريع.</p></div><span class="health-icon">◔</span></div><div class="progress-number">12 <small data-i18n="projectsTotal">مشروعاً إجمالاً</small></div><div class="progress-track"><span class="seg-done"></span><span class="seg-work"></span><span class="seg-draft"></span></div><div class="legend"><span><i class="dot done"></i><span data-i18n="ready">جاهز</span><b>5</b></span><span><i class="dot work"></i><span data-i18n="inProgress">قيد التنفيذ</span><b>4</b></span><span><i class="dot draft"></i><span data-i18n="inDraft">مسودة</span><b>3</b></span></div></section></div>
-        <footer><span>© 2026 SINDA</span><span data-i18n="footerNote">واجهة أولية · جميع البيانات المعروضة تجريبية</span></footer>
-      </section>
-    </main>
-  </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111a2b"><title>SINDA | Beta 0.1</title><link rel="stylesheet" href="./beta.css"></head><body>
+<aside class="side"><div class="brand"><b>S</b><span>SINDA<small>Digital workspace</small></span></div><p>WORKSPACE</p><a href="#home">▦ <span data-t="title">إدارة SINDA الرقمية</span></a><a href="#projects">▣ التطبيقات والمواقع</a><a href="#projects">◌ المجتمعات والمنتديات</a><a href="#projects">◇ المتاجر الرقمية</a><a href="#projects">⌁ التواصل الاجتماعي</a><div class="side-bottom">● Local demo<br><small>Beta 0.1 · No production access</small></div></aside>
+<main id="home"><header><button id="language">EN</button><span class="badge">● <span data-t="demo">بيانات تجريبية فقط</span></span></header><section class="hero"><div><small>SINDA / DIGITAL OPERATIONS</small><h1 data-t="title">إدارة SINDA الرقمية</h1><p data-t="sub">نموذج تجريبي محلي</p></div><button class="primary" id="new" data-t="create">＋ مشروع جديد</button></section>
+<div class="notice">ⓘ <span data-t="demo">بيانات تجريبية فقط</span> — لا يوجد ربط خارجي أو دفع أو نشر فعلي.</div>
+<section class="stats"><article><span data-t="all">كل المشاريع</span><b id="total">0</b></article><article><span data-t="active">نشط</span><b id="active">0</b></article><article><span data-t="draft">مسودة</span><b id="draft">0</b></article><article><span data-t="review">مراجعة</span><b id="review">0</b></article></section>
+<section class="manager" id="projects"><div class="manager-head"><div><small>MANAGEMENT ENGINE</small><h2>Projects / المشاريع</h2></div><div class="tools"><button id="export" data-t="export">تصدير JSON</button><label class="file"> <span data-t="import">استيراد JSON</span><input id="import" type="file" accept="application/json"></label><button id="reset" data-t="reset">استعادة البيانات</button></div></div><div id="tabs" class="tabs"></div><div class="filters"><input id="search" type="search" placeholder="ابحث عن مشروع..." aria-label="Search"><select id="status"><option value="all">كل الحالات</option><option value="active">نشط</option><option value="draft">مسودة</option><option value="review">قيد المراجعة</option></select></div><div id="list" class="list"></div></section><footer>© SINDA · Beta 0.1 · Local-first sample workspace</footer></main>
+<dialog id="modal"><form id="form"><div class="modal-head"><h2 data-t="create">مشروع جديد</h2><button type="button" id="cancel">×</button></div><input id="id" type="hidden"><label><span data-t="name">اسم المشروع</span><input id="name" required minlength="2" maxlength="80"></label><label><span data-t="category">الفئة</span><select id="category"><option value="applications">التطبيقات</option><option value="websites">المواقع</option><option value="forums">المنتديات</option><option value="stores">المتاجر</option><option value="social">التواصل الاجتماعي</option></select></label><label><span data-t="status">الحالة</span><select id="statusEdit"><option value="draft">مسودة</option><option value="active">نشط</option><option value="review">مراجعة</option></select></label><label><span data-t="desc">الوصف</span><textarea id="desc" maxlength="500"></textarea></label><button class="primary" type="submit" data-t="save">حفظ</button></form></dialog><script type="module" src="./app.js"></script></body></html>
