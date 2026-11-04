@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light"><title>SINDA AI Control Center</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark;background:#101722;color:#edf3fa}*{box-sizing:border-box}body{margin:0;padding:24px;max-width:980px;margin-inline:auto}header{margin-bottom:24px}h1{margin:0 0 8px;font-size:clamp(1.5rem,4vw,2.2rem)}p{color:#aebdd0;line-height:1.7}.panel{background:#192535;border:1px solid #314258;border-radius:14px;padding:18px;margin:16px 0}label{display:block;margin:12px 0 6px;color:#cbd8e7}input{width:100%;padding:12px;border-radius:8px;border:1px solid #465a70;background:#0e1722;color:#fff}button{padding:10px 15px;border:0;border-radius:8px;background:#9bc5ff;color:#102033;font-weight:700;cursor:pointer;margin:10px 0 0 8px}button.danger{background:#e6a0a0}button:disabled{opacity:.5}small,.muted{color:#9eb0c5}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.item{padding:12px 0;border-bottom:1px solid #34465b}.status{min-height:1.5em;color:#b7d6ff}.warning{border-inline-start:3px solid #e7b66e;padding:8px 12px;background:#302a20;color:#f3d7a9}.ltr{direction:ltr;text-align:left}code{overflow-wrap:anywhere}
+</style></head>
+<body>
+<header><h1>SINDA AI Control Center</h1><p>لوحة مستقلة لإدارة مفاتيح API. تُحفظ الأسرار مشفّرة في الخادم ولا تُعرض مرة أخرى.</p><p class="warning">نسخة معاينة: استخدم مفاتيح اختبار فقط. لا تُدخل مفاتيح إنتاج حقيقية قبل مراجعة الأمان المستقلة.</p></header>
+<section class="panel">
+<h2>اتصال آمن</h2>
+<label for="token">رمز الإدارة (يبقى في ذاكرة الصفحة فقط)</label><input id="token" type="password" autocomplete="off" placeholder="Bearer token" class="ltr">
+<div class="row"><button id="connect">اتصال وعرض المفاتيح</button><button id="clear" type="button">مسح الرمز</button></div>
+</section>
+<section class="panel">
+<h2>إضافة مفتاح API</h2>
+<label for="provider">المزوّد (مثل openai أو github)</label><input id="provider" maxlength="60" autocomplete="off">
+<label for="label">اسم تعريفي</label><input id="label" maxlength="100" autocomplete="off">
+<label for="secret">مفتاح API</label><input id="secret" type="password" autocomplete="new-password" class="ltr">
+<button id="save">تشفير وحفظ المفتاح</button>
+<p class="muted">لن يُعاد المفتاح إلى المتصفح بعد الحفظ. احتفظ بنسختك الآمنة لدى المزوّد.</p>
+</section>
+<section class="panel"><h2>المفاتيح المحفوظة</h2><div id="items" class="muted">لم يتم الاتصال.</div></section>
+<section class="panel"><h2>سجل التدقيق</h2><div id="audit" class="muted">سجل الأحداث يظهر بعد الاتصال.</div></section>
+<p id="status" class="status" role="status" aria-live="polite"></p>
+<script>
+(() => {
+ let token = "";
+ const $ = id => document.getElementById(id);
+ const headers = () => ({ "Authorization": "Bearer " + token, "Content-Type": "application/json" });
+ const status = message => $("status").textContent = message;
+ async function api(url, options={}) {
+   const response = await fetch(url, {...options, headers:{...headers(),...(options.headers||{})}});
+   if (!response.ok) throw new Error("فشل الطلب: HTTP " + response.status);
+   return response.status === 204 ? null : response.json();
+ }
+ async function refresh() {
+   const data = await api("/api/credentials");
+   $("items").replaceChildren();
+   if (!data.credentials.length) $("items").textContent = "لا توجد مفاتيح محفوظة.";
+   for (const item of data.credentials) {
+     const row = document.createElement("div"); row.className = "item";
+     const title = document.createElement("strong"); title.textContent = item.provider + " — " + item.label;
+     const meta = document.createElement("p"); meta.textContent = "بصمة: " + item.key_fingerprint + " · أُضيف: " + new Date(item.created_at).toLocaleString();
+     const del = document.createElement("button"); del.className = "danger"; del.textContent = "حذف";
+     del.addEventListener("click", async () => { if (!confirm("حذف بيانات الاعتماد نهائياً؟")) return; try { await api("/api/credentials/" + encodeURIComponent(item.id), {method:"DELETE"}); await refresh(); status("تم الحذف."); } catch(e) { status(e.message); }});
+     row.append(title, meta, del); $("items").append(row);
+   }
+   const audit = await api("/api/audit");
+   $("audit").replaceChildren();
+   for (const event of audit.events) {
+     const line = document.createElement("p"); line.textContent = event.action + " · " + new Date(event.created_at).toLocaleString(); $("audit").append(line);
+   }
+ }
+ $("connect").addEventListener("click", async () => { token = $("token").value; try { await refresh(); status("تم الاتصال."); } catch(e) { status(e.message); }});
+ $("clear").addEventListener("click", () => { token = ""; $("token").value = ""; $("items").textContent = "تم مسح الرمز."; $("audit").textContent = ""; status("تم مسح رمز الجلسة."); });
+ $("save").addEventListener("click", async () => {
+   if (!token) return status("أدخل رمز الإدارة أولاً.");
+   const payload = {provider:$("provider").value.trim(),label:$("label").value.trim(),apiKey:$("secret").value};
+   try { await api("/api/credentials",{method:"POST",body:JSON.stringify(payload)}); $("secret").value = ""; await refresh(); status("حُفظ المفتاح مشفّراً. لن يُعرض مرة أخرى."); }
+   catch(e) { status(e.message); }
+ });
+})();
+</script></body></html>
