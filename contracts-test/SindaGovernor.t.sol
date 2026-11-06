@@ -58,6 +58,13 @@ contract SindaGovernorTest is Test {
         assertEq(uint256(governor.state(proposalId)), uint256(IGovernor.ProposalState.Executed));
     }
 
+    function testTimelockRoleGraphIsConfiguredForGovernor() public view {
+        assertTrue(timelock.hasRole(timelock.PROPOSER_ROLE(), address(governor)));
+        assertFalse(timelock.hasRole(timelock.PROPOSER_ROLE(), address(this)));
+        assertTrue(timelock.hasRole(timelock.TIMELOCK_ADMIN_ROLE(), address(timelock)));
+        assertTrue(timelock.hasRole(timelock.EXECUTOR_ROLE(), address(0)));
+    }
+
     function setExecutedValue(uint256 value) external {
         require(msg.sender == address(timelock), "only timelock");
         executedValue = value;
