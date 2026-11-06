@@ -33,6 +33,26 @@ contract SindaTreasuryTest is Test {
         treasury.withdrawERC20(token, address(0), 1 ether);
     }
 
+    function testOnlyOwnerCanWithdrawNativeAsset() public {
+        vm.deal(address(treasury), 5 ether);
+
+        vm.prank(outsider);
+        vm.expectRevert();
+        treasury.withdrawNative(payable(recipient), 1 ether);
+
+        vm.prank(admin);
+        treasury.withdrawNative(payable(recipient), 1 ether);
+        assertEq(recipient.balance, 1 ether);
+        assertEq(address(treasury).balance, 4 ether);
+    }
+
+    function testNativeWithdrawalRejectsZeroRecipient() public {
+        vm.deal(address(treasury), 1 ether);
+        vm.prank(admin);
+        vm.expectRevert(SindaTreasury.ZeroRecipient.selector);
+        treasury.withdrawNative(payable(address(0)), 1 ether);
+    }
+
     function testOwnershipTransferRequiresAcceptance() public {
         address nextOwner = makeAddr("next-owner");
         vm.prank(admin);
