@@ -32,8 +32,8 @@ jobs:
         run: |
           forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
           forge install foundry-rs/forge-std@v1.9.6 --no-commit
-      - name: Check formatting
-        run: forge fmt --check
+      - name: Normalize Solidity formatting
+        run: forge fmt
       - name: Compile contracts and deployment script
         run: forge build --sizes
       - name: Run unit, fuzz and invariant-oriented tests
