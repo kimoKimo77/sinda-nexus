@@ -57,7 +57,7 @@ contract DeploySindaSepolia is Script {
         // Open execution is intentional: anyone may execute an already queued operation.
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(0));
         // Timelock retains its self-admin role; the deployer loses temporary admin access.
-        timelock.revokeRole(timelock.TIMELOCK_ADMIN_ROLE(), deployer);
+        timelock.revokeRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
 
         vm.stopBroadcast();
 
