@@ -51,6 +51,16 @@ forge test -vvv
 
 CI performs formatting, compilation and unit tests. It does not run `forge script --broadcast`, publish contracts, or send transactions.
 
+## Current automated test coverage
+
+Foundry tests cover:
+- Token metadata, exact fixed initial supply, absence of a mint entry point, zero-holder rejection, permit nonce initialization and vote delegation.
+- Governance proposal lifecycle, voting, queueing, and rejection of execution before the Timelock delay expires.
+- Treasury ERC-20 and native-asset withdrawals, owner-only authorization, zero-recipient rejection, and two-step ownership transfer.
+- Vesting before the start time, halfway linear accrual, full vesting at the schedule end, and beneficiary release.
+
+The latest test run is authoritative for the exact pass/fail count; this list describes intended assertions, not an independent security audit.
+
 ## Review limitations
 
 - This is not an audit or certification.
