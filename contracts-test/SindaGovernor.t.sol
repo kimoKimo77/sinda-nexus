@@ -47,6 +47,10 @@ contract SindaGovernorTest is Test {
         governor.queue(targets, values, calldatas, descriptionHash);
         assertEq(executedValue, 0);
 
+        vm.expectRevert();
+        governor.execute(targets, values, calldatas, descriptionHash);
+        assertEq(executedValue, 0);
+
         vm.warp(block.timestamp + 2 days + 1);
         governor.execute(targets, values, calldatas, descriptionHash);
 
