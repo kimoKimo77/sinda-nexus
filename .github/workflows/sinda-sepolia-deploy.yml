@@ -61,9 +61,11 @@ jobs:
         env:
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
           SINDA_SEPOLIA_PRIVATE_KEY: ${{ secrets.SINDA_SEPOLIA_PRIVATE_KEY }}
+          SINDA_INITIAL_HOLDER: ${{ vars.SINDA_INITIAL_HOLDER }}
         run: |
           test -n "$SEPOLIA_RPC_URL"
           test -n "$SINDA_SEPOLIA_PRIVATE_KEY"
+          test -n "$SINDA_INITIAL_HOLDER"
           forge script script/DeploySindaSepolia.s.sol:DeploySindaSepolia \
             --rpc-url "$SEPOLIA_RPC_URL" \
             --broadcast \
