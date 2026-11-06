@@ -1,0 +1,95 @@
+name: SINDA Sepolia Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_to_sepolia:
+        description: "Explicitly authorize a Sepolia testnet deployment"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      tested_sha: ${{ steps.tested-revision.outputs.sha }}
+    steps:
+      - name: Checkout exact revision under test
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record exact tested revision
+        id: tested-revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Install pinned Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+        with:
+          version: v1.9.0
+      - name: Install pinned dependencies
+        run: |
+          forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
+          forge install foundry-rs/forge-std@v1.9.6 --no-commit
+      - name: Normalize Solidity formatting
+        run: forge fmt
+      - name: Compile contracts and deployment script
+        run: forge build --sizes
+      - name: Run unit, fuzz and invariant-oriented tests
+        run: forge test -vvv --fuzz-runs 512
+
+  deploy-sepolia:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy_to_sepolia == true
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: sinda-sepolia
+      url: https://sepolia.etherscan.io
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the exact revision that passed checks
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.checks.outputs.tested_sha }}
+          persist-credentials: false
+      - name: Install pinned Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+        with:
+          version: v1.9.0
+      - name: Install pinned dependencies
+        run: |
+          forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
+          forge install foundry-rs/forge-std@v1.9.6 --no-commit
+      - name: Deploy to Ethereum Sepolia
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          SINDA_SEPOLIA_PRIVATE_KEY: ${{ secrets.SINDA_SEPOLIA_PRIVATE_KEY }}
+          SINDA_INITIAL_HOLDER: ${{ vars.SINDA_INITIAL_HOLDER }}
+        run: |
+          test -n "$SEPOLIA_RPC_URL"
+          test -n "$SINDA_SEPOLIA_PRIVATE_KEY"
+          test -n "$SINDA_INITIAL_HOLDER"
+          forge script script/DeploySindaSepolia.s.sol:DeploySindaSepolia \
+            --rpc-url "$SEPOLIA_RPC_URL" \
+            --broadcast \
+            --slow
+      - name: Upload deployment record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sinda-sepolia-broadcast-record
+          path: broadcast/
+          if-no-files-found: ignore
+          retention-days: 30

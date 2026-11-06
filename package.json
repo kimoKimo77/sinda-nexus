@@ -1,0 +1,24 @@
+{
+  "name": "sinda-nexus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurable project, file metadata, and reporting API",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "test:web3": "node --test test/web3-validation.test.js",
+    "check": "node --check src/app.js && node --check src/server.js && node --check src/web3/validation.js && node --test",
+    "rpc:live": "node scripts/rpc-smoke.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
