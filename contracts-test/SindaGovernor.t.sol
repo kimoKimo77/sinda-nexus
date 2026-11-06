@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {SindaToken} from "../contracts/token/SindaToken.sol";
 import {SindaTimelock} from "../contracts/governance/SindaTimelock.sol";
 import {SindaGovernor} from "../contracts/governance/SindaGovernor.sol";
