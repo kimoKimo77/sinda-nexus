@@ -61,7 +61,7 @@ contract SindaGovernorTest is Test {
     function testTimelockRoleGraphIsConfiguredForGovernor() public view {
         assertTrue(timelock.hasRole(timelock.PROPOSER_ROLE(), address(governor)));
         assertFalse(timelock.hasRole(timelock.PROPOSER_ROLE(), address(this)));
-        assertTrue(timelock.hasRole(timelock.TIMELOCK_ADMIN_ROLE(), address(timelock)));
+        assertTrue(timelock.hasRole(timelock.DEFAULT_ADMIN_ROLE(), address(timelock)));
         assertTrue(timelock.hasRole(timelock.EXECUTOR_ROLE(), address(0)));
     }
 
