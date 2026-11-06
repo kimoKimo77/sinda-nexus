@@ -15,7 +15,7 @@ contract SindaVestingWalletTest is Test {
         token.transfer(address(vesting), 100 ether);
 
         vm.warp(uint256(start) + duration / 2);
-        assertEq(vesting vestedAmount(address(token), uint64(block.timestamp)), 50 ether);
+        assertEq(vesting.vestedAmount(address(token), uint64(block.timestamp)), 50 ether);
 
         vm.prank(beneficiary);
         vesting.release(token);
