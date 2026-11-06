@@ -19,6 +19,7 @@ contract DeploySindaSepolia is Script {
 
     error UnsupportedChain(uint256 actualChainId);
     error InvalidDeployerKey();
+    error InvalidInitialHolder();
 
     function run() external {
         if (block.chainid != SEPOLIA_CHAIN_ID) {
@@ -29,6 +30,8 @@ contract DeploySindaSepolia is Script {
         if (deployerKey == 0) revert InvalidDeployerKey();
 
         address deployer = vm.addr(deployerKey);
+        address initialHolder = vm.envAddress("SINDA_INITIAL_HOLDER");
+        if (initialHolder == address(0)) revert InvalidInitialHolder();
 
         vm.startBroadcast(deployerKey);
 
@@ -39,7 +42,8 @@ contract DeploySindaSepolia is Script {
         SindaTimelock timelock =
             new SindaTimelock(TIMELOCK_DELAY, proposers, executors, deployer);
         SindaTreasury treasury = new SindaTreasury(address(timelock));
-        SindaToken token = new SindaToken(address(treasury));
+        // Keep voting supply with the explicitly configured holder, not inside the treasury.
+        SindaToken token = new SindaToken(initialHolder);
         SindaGovernor governor = new SindaGovernor(
             IVotes(address(token)),
             timelock,
@@ -59,6 +63,7 @@ contract DeploySindaSepolia is Script {
 
         console2.log("SINDA_SEPOLIA_CHAIN_ID", block.chainid);
         console2.log("SINDA_DEPLOYER", deployer);
+        console2.log("SINDA_INITIAL_HOLDER", initialHolder);
         console2.log("SINDA_TIMELOCK", address(timelock));
         console2.log("SINDA_TREASURY", address(treasury));
         console2.log("SINDA_TOKEN", address(token));
