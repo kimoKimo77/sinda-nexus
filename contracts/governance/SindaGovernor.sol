@@ -114,13 +114,4 @@ contract SindaGovernor is
     {
         return super._executor();
     }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
 }
