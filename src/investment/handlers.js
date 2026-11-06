@@ -34,12 +34,17 @@ function safeSnapshot(snapshot, market) {
       typeof snapshot.source !== "string" || !snapshot.source.trim()) {
     throw new TypeError("Market data provider omitted valid provenance fields.");
   }
+  const observedAt = Date.parse(snapshot.asOf);
+  const now = Date.now();
+  if (observedAt > now + 5 * 60_000 || now - observedAt > 400 * 24 * 60 * 60_000) {
+    throw new TypeError("Market data provider returned an invalid or stale timestamp.");
+  }
   if (!Array.isArray(snapshot.items) || snapshot.items.length > 100) {
     throw new TypeError("Market data provider must return at most 100 items.");
   }
   return {
     market,
-    asOf: new Date(snapshot.asOf).toISOString(),
+    asOf: new Date(observedAt).toISOString(),
     source: snapshot.source.trim().slice(0, 120),
     items: snapshot.items.map(item => {
       if (!item || typeof item !== "object" || Array.isArray(item) ||
