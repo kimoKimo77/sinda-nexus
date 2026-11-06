@@ -1,14 +1,12 @@
 name: SINDA Sepolia Preview
 
 on:
-  push:
-    branches:
-      - feat/sinda-smart-contract-suite-preview
-      - feat/sinda-sepolia-hardening-preview
   pull_request:
     branches:
-      - fix/web3-review-followups-v2
-      - feat/sinda-smart-contract-suite-preview
+      - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       deploy_to_sepolia:
@@ -23,11 +21,22 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      tested_sha: ${{ steps.tested-revision.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Checkout exact revision under test
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          version: stable
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record exact tested revision
+        id: tested-revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Install pinned Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+        with:
+          version: v1.9.0
       - name: Install pinned dependencies
         run: |
           forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
@@ -40,19 +49,25 @@ jobs:
         run: forge test -vvv --fuzz-runs 512
 
   deploy-sepolia:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_to_sepolia == true
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy_to_sepolia == true
     needs: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: sinda-sepolia
       url: https://sepolia.etherscan.io
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Checkout the exact revision that passed checks
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          version: stable
+          ref: ${{ needs.checks.outputs.tested_sha }}
+          persist-credentials: false
+      - name: Install pinned Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+        with:
+          version: v1.9.0
       - name: Install pinned dependencies
         run: |
           forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
@@ -72,7 +87,7 @@ jobs:
             --slow
       - name: Upload deployment record
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sinda-sepolia-broadcast-record
           path: broadcast/
