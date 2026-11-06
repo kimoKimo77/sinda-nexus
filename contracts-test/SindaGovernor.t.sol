@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
-import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {SindaToken} from "../contracts/token/SindaToken.sol";
 import {SindaTimelock} from "../contracts/governance/SindaTimelock.sol";
 import {SindaGovernor} from "../contracts/governance/SindaGovernor.sol";
@@ -42,7 +42,7 @@ contract SindaGovernorTest is Test {
         governor.castVote(proposalId, 1);
         vm.roll(governor.proposalDeadline(proposalId) + 1);
 
-        assertEq(uint256(governor.state(proposalId)), uint256(Governor.ProposalState.Succeeded));
+        assertEq(uint256(governor.state(proposalId)), uint256(IGovernor.ProposalState.Succeeded));
 
         governor.queue(targets, values, calldatas, descriptionHash);
         assertEq(executedValue, 0);
