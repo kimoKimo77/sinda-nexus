@@ -1,0 +1,29 @@
+name: SINDA Solidity Preview CI
+
+on:
+  push:
+    branches: ["feat/sinda-smart-contract-suite-preview"]
+  pull_request:
+    branches: ["fix/web3-review-followups-v2"]
+
+permissions:
+  contents: read
+
+jobs:
+  solidity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Install pinned dependencies
+        run: |
+          forge install OpenZeppelin/openzeppelin-contracts@v5.2.0 --no-commit
+          forge install foundry-rs/forge-std@v1.9.6 --no-commit
+      - name: Check formatting
+        run: forge fmt --check
+      - name: Compile contracts
+        run: forge build --sizes
+      - name: Run unit tests
+        run: forge test -vvv
