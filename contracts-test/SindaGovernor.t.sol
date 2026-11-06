@@ -51,7 +51,7 @@ contract SindaGovernorTest is Test {
         governor.execute(targets, values, calldatas, descriptionHash);
 
         assertEq(executedValue, 42);
-        assertEq(uint256(governor.state(proposalId)), uint256(Governor.ProposalState.Executed));
+        assertEq(uint256(governor.state(proposalId)), uint256(IGovernor.ProposalState.Executed));
     }
 
     function setExecutedValue(uint256 value) external {
