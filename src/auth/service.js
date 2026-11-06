@@ -47,7 +47,7 @@ export function createSessionService({ secret, ttlSeconds = 3600, clock = () => 
       try {
         const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
         const now = Math.floor(clock() / 1000);
-        if (!payload.sub || !payload.org || !payload.role || !Number.isInteger(payload.exp) || payload.exp <= now) return null;
+        if (!payload.sub || !payload.org || !payload.role || !Number.isInteger(payload.iat) || payload.iat > now + 60 || !Number.isInteger(payload.exp) || payload.exp <= now || payload.exp <= payload.iat || typeof payload.jti !== "string" || !/^[0-9a-f-]{36}$/i.test(payload.jti)) return null;
         return payload;
       } catch { return null; }
     }
@@ -72,10 +72,20 @@ export function createAuthService({ pool, sessionSecret, sessionTtlSeconds } = {
       }
       return { token:sessions.issue(user), user:{ id:user.id, organizationId:user.organization_id, email:user.email, displayName:user.display_name, role:user.role } };
     },
-    authenticate(request) {
+    async authenticate(request) {
       const header = request.headers.authorization ?? "";
       if (!header.startsWith("Bearer ")) return null;
-      return sessions.verify(header.slice(7));
+      const identity = sessions.verify(header.slice(7));
+      if (!identity) return null;
+      // Re-check account state and current role on every authenticated request.
+      // This makes account deactivation effective immediately and avoids stale role claims.
+      const result = await pool.query(
+        "SELECT id, organization_id, role FROM users WHERE id=$1 AND organization_id=$2 AND active=true LIMIT 1",
+        [identity.sub, identity.org]
+      );
+      const user = result.rows[0];
+      if (!user) return null;
+      return { ...identity, sub:user.id, org:user.organization_id, role:user.role };
     }
   };
 }

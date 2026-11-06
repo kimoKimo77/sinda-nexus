@@ -42,12 +42,40 @@ test("missing market provider is reported as unavailable and never fabricates pr
 });
 
 test("market provider data is validated and provenance is retained",async()=>{
-  const provider={getSnapshot:async market=>({market,asOf:"2026-10-31T08:00:00Z",source:"approved-test-feed",items:[{symbol:"XAU",name:"Gold",price:2800,currency:"USD",changePercent:0.2}]})};
+  const provider={getSnapshot:async market=>({market,asOf:"2026-10-31T08:00:00Z",source:" approved-test-feed ",items:[{symbol:"XAU",name:"Gold",price:"2800",currency:"USD",changePercent:0.2}]})};
   const handlers=createInvestmentReadHandlers({auth,marketDataProvider:provider});
   const result=await handlers.snapshot({headers:{authorization:"Bearer test-token"}}, "gold");
   assert.equal(result.status,"available");
   assert.equal(result.data.source,"approved-test-feed");
   assert.equal(result.data.items[0].price,2800);
+  assert.equal(result.data.asOf,"2026-10-31T08:00:00.000Z");
+});
+
+test("null change percentage remains null instead of being coerced to zero",async()=>{
+  const provider={getSnapshot:async market=>({market,asOf:"2026-10-31T08:00:00Z",source:"test-feed",items:[{symbol:"XAU",name:"Gold",price:null,changePercent:null}]})};
+  const handlers=createInvestmentReadHandlers({auth,marketDataProvider:provider});
+  const result=await handlers.snapshot({headers:{authorization:"Bearer test-token"}}, "gold");
+  assert.equal(result.status,"available");
+  assert.equal(result.data.items[0].price,null);
+  assert.equal(result.data.items[0].changePercent,null);
+});
+
+test("invalid provenance, malformed numbers and oversized provider responses fail closed",async()=>{
+  const invalidSnapshots=[
+    market=>({market,asOf:"not-a-date",source:"feed",items:[]}),
+    market=>({market,asOf:"2026-10-31T08:00:00Z",source:"  ",items:[]}),
+    market=>({market,asOf:"2026-10-31T08:00:00Z",source:"feed",items:[{symbol:"X",name:"X",price:"",changePercent:0}]}),
+    market=>({market,asOf:"2026-10-31T08:00:00Z",source:"feed",items:[{symbol:"X",name:"X",price:1,changePercent:true}]}),
+    market=>({market,asOf:"2026-10-31T08:00:00Z",source:"feed",items:Array.from({length:101},(_,i)=>({symbol:"S"+i,name:"Item "+i,price:1}))})
+  ];
+  for (const makeSnapshot of invalidSnapshots) {
+    const provider={getSnapshot:async market=>makeSnapshot(market)};
+    const handlers=createInvestmentReadHandlers({auth,marketDataProvider:provider});
+    const result=await handlers.snapshot({headers:{authorization:"Bearer test-token"}}, "stocks");
+    assert.equal(result.status,"unavailable");
+    assert.equal(result.data,null);
+    assert.equal(result.reason,"market_data_provider_error");
+  }
 });
 
 test("invalid provider prices fail closed without leaking provider errors",async()=>{

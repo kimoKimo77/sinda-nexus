@@ -1,7 +1,7 @@
 import { INVESTMENT_MARKETS, INVESTMENT_RESTRICTIONS } from "./catalog.js";
 
-function requireIdentity(auth, request) {
-  const identity = auth?.authenticate?.(request);
+async function requireIdentity(auth, request) {
+  const identity = await auth?.authenticate?.(request);
   if (!identity) {
     const error = new Error("Authentication required.");
     error.status = 401;
@@ -10,37 +10,60 @@ function requireIdentity(auth, request) {
   return identity;
 }
 
+function optionalFiniteNumber(value, fieldName) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" && typeof value !== "string") {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  if (typeof value === "string" && value.trim() === "") {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new TypeError("Market data provider returned an invalid " + fieldName + ".");
+  }
+  return parsed;
+}
+
 function safeSnapshot(snapshot, market) {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
     throw new TypeError("Market data provider returned an invalid snapshot.");
   }
-  if (snapshot.market !== market || typeof snapshot.asOf !== "string" || typeof snapshot.source !== "string" || !snapshot.source.trim()) {
-    throw new TypeError("Market data provider omitted required provenance fields.");
+  if (snapshot.market !== market || typeof snapshot.asOf !== "string" ||
+      !Number.isFinite(Date.parse(snapshot.asOf)) ||
+      typeof snapshot.source !== "string" || !snapshot.source.trim()) {
+    throw new TypeError("Market data provider omitted valid provenance fields.");
   }
   const observedAt = Date.parse(snapshot.asOf);
   const now = Date.now();
-  if (!Number.isFinite(observedAt) || observedAt > now + 5 * 60_000 || now - observedAt > 400 * 24 * 60 * 60_000) {
+  if (observedAt > now + 5 * 60_000 || now - observedAt > 400 * 24 * 60 * 60_000) {
     throw new TypeError("Market data provider returned an invalid or stale timestamp.");
   }
-  if (!Array.isArray(snapshot.items)) throw new TypeError("Market data provider must return an items array.");
+  if (!Array.isArray(snapshot.items) || snapshot.items.length > 100) {
+    throw new TypeError("Market data provider must return at most 100 items.");
+  }
   return {
     market,
-    asOf: snapshot.asOf,
-    source: snapshot.source.slice(0, 120),
-    items: snapshot.items.slice(0, 100).map(item => {
-      if (!item || typeof item.symbol !== "string" || typeof item.name !== "string") {
+    asOf: new Date(observedAt).toISOString(),
+    source: snapshot.source.trim().slice(0, 120),
+    items: snapshot.items.map(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item) ||
+          typeof item.symbol !== "string" || !item.symbol.trim() ||
+          typeof item.name !== "string" || !item.name.trim()) {
         throw new TypeError("Market data provider returned an invalid item.");
       }
-      const price = item.price === null || item.price === undefined ? null : Number(item.price);
-      if (price !== null && (!Number.isFinite(price) || price < 0)) {
+      const price = optionalFiniteNumber(item.price, "price");
+      if (price !== null && price < 0) {
         throw new TypeError("Market data provider returned an invalid price.");
       }
       return {
-        symbol: item.symbol.slice(0, 32),
-        name: item.name.slice(0, 120),
+        symbol: item.symbol.trim().slice(0, 32),
+        name: item.name.trim().slice(0, 120),
         price,
-        currency: typeof item.currency === "string" ? item.currency.slice(0, 8) : null,
-        changePercent: Number.isFinite(Number(item.changePercent)) ? Number(item.changePercent) : null
+        currency: typeof item.currency === "string" && item.currency.trim()
+          ? item.currency.trim().slice(0, 8)
+          : null,
+        changePercent: optionalFiniteNumber(item.changePercent, "changePercent")
       };
     })
   };
@@ -52,7 +75,7 @@ export function createInvestmentReadHandlers({ auth, marketDataProvider = null }
   }
   return {
     async markets(request) {
-      const identity = requireIdentity(auth, request);
+      const identity = await requireIdentity(auth, request);
       return {
         userId: identity.sub,
         mode: "read-only",
@@ -61,7 +84,7 @@ export function createInvestmentReadHandlers({ auth, marketDataProvider = null }
       };
     },
     async snapshot(request, marketId) {
-      requireIdentity(auth, request);
+      await requireIdentity(auth, request);
       const market = INVESTMENT_MARKETS.find(item => item.id === marketId);
       if (!market) {
         const error = new Error("Unknown market.");
