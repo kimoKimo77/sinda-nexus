@@ -28,6 +28,7 @@ test("POST /api/web3/validate returns a verified read-only EVM result", async ()
   assert.equal(response.status, 200);
   assert.equal(response.body.data.status, "valid");
   assert.equal(response.body.data.chainId, 1);
+  assert.equal(response.body.data.finality, "not_assessed");
 });
 
 
