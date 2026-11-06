@@ -1,6 +1,9 @@
 name: SINDA Sepolia Preview
 
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       deploy_to_sepolia:
