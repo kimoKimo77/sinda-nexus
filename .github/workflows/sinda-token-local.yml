@@ -49,7 +49,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- package-lock.json; then
+          if [[ -n "$(git status --porcelain -- package-lock.json)" ]]; then
             git add package-lock.json
             git commit -m "build(sinda-token): add npm lockfile"
             git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
