@@ -1,0 +1,19 @@
+{
+  "name": "sinda-fixed-supply-token",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone fixed-supply SINDA ERC-20 contract and local tests",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "@openzeppelin/contracts": "5.4.0",
+    "hardhat": "2.28.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

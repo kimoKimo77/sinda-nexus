@@ -1,0 +1,65 @@
+name: SINDA Token Local Verification
+
+on:
+  push:
+    branches:
+      - chore/add-projects-structure
+    paths:
+      - "projects/smart-contracts/sinda-token/**"
+      - ".github/workflows/sinda-token-local.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "projects/smart-contracts/sinda-token/**"
+      - ".github/workflows/sinda-token-local.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sinda-token-local-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/smart-contracts/sinda-token
+    steps:
+      - name: Checkout reviewed branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Generate reproducible npm lockfile when absent
+        shell: bash
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if [[ ! -f package-lock.json ]]; then
+            echo "::error::npm did not create package-lock.json"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain -- package-lock.json)" ]]; then
+            git add package-lock.json
+            git commit -m "build(sinda-token): add npm lockfile"
+            git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
+          fi
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Compile Solidity
+        run: npm run compile
+
+      - name: Run seven EVM tests
+        run: npm test
