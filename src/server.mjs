@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -85,8 +85,9 @@ export function createServer() {
       if (req.method === 'GET' && !url.pathname.startsWith('/api/')) {
         const requested = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname.slice(1));
         const safePath = normalize(requested).replace(/^([.][.][/\\])+/, '');
-        const file = join(publicDir, safePath);
-        if (!file.startsWith(publicDir)) return json(res, 403, { error: 'Forbidden' });
+        const file = resolve(publicDir, safePath);
+        const rel = relative(publicDir, file);
+        if (rel.startsWith('..' + sep) || rel === '..') return json(res, 403, { error: 'Forbidden' });
         try {
           const content = await readFile(file);
           res.writeHead(200, { 'content-type': mime[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
