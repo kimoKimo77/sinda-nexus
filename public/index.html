@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827"><title>SINDA Crypto Management Center</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="top"><div class="brand"><span class="mark">S</span><div><strong>SINDA</strong><small>Crypto Management Center</small></div></div><div class="top-meta"><span class="dot"></span> وضع المعاينة · قراءة فقط على البلوكشين</div></header>
+<main class="wrap">
+<section class="hero"><div><p class="eyebrow">BLOCKCHAIN OPERATIONS</p><h1>مركز إدارة المحافظ الرقمية</h1><p class="muted">إدارة العناوين ومراقبة الأرصدة العامة عبر Etherscan.</p></div><span class="pill">PREVIEW</span></section>
+<section class="stats"><article class="panel"><small>المحافظ المسجلة</small><strong id="wallet-count">0</strong><span class="muted">عناوين محفوظة خلال الجلسة</span></article><article class="panel"><small>الشبكة الافتراضية</small><strong>Ethereum</strong><span class="muted">Mainnet · Chain ID 1</span></article><article class="panel"><small>حالة الخدمة</small><strong id="health">جارٍ الفحص</strong><span class="muted">واجهة API المحلية</span></article></section>
+<section class="panel section"><div class="section-head"><div><h2>إضافة محفظة</h2><p class="muted">أضف عنواناً عاماً فقط. لا تدخل عبارة الاسترداد أو المفتاح الخاص.</p></div></div>
+<form id="wallet-form"><label>اسم تعريفي<input id="label" maxlength="64" placeholder="مثال: محفظة المتابعة"></label><label>عنوان EVM<input id="address" required autocomplete="off" spellcheck="false" placeholder="0x..."></label><button type="submit">إضافة العنوان</button></form><p id="message" class="message" role="status"></p></section>
+<section class="panel section"><div class="section-head"><div><h2>المحافظ</h2><p class="muted">البيانات في هذه النسخة مؤقتة وتُمسح عند إعادة تشغيل الخادم.</p></div><button class="secondary" id="refresh" type="button">تحديث</button></div><div id="wallet-list" class="wallet-list"><p class="muted">لا توجد محافظ مضافة بعد.</p></div></section>
+<footer>© SINDA · لا توجد معاملات أو توقيعات أو تحويلات أموال في هذا التطبيق.</footer>
+</main><script type="module" src="/app.js"></script>
+</body></html>
