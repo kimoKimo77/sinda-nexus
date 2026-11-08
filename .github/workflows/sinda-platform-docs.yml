@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           file="projects/sinda-platform/README.md"
           test -s "$file"
-          test -n "$(tail -c 1 "$file")" || {
+          python -c 'from pathlib import Path; import sys; p = Path(sys.argv[1]); sys.exit(0 if p.read_bytes().endswith(b"\\n") else 1)' "$file" || {
             echo "::error file=$file::Missing final newline"
             exit 1
           }
