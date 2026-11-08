@@ -1,0 +1,50 @@
+name: SINDA Platform Docs CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "projects/sinda-platform/**"
+      - ".github/workflows/sinda-platform-docs.yml"
+  push:
+    branches:
+      - "docs/sinda-platform-foundation"
+    paths:
+      - "projects/sinda-platform/**"
+      - ".github/workflows/sinda-platform-docs.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinda-platform-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs-check:
+    name: Validate platform documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Validate README
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="projects/sinda-platform/README.md"
+          test -s "$file"
+          python -c 'from pathlib import Path; import sys; p = Path(sys.argv[1]); sys.exit(0 if p.read_bytes().endswith(bytes([10])) else 1)' "$file" || {
+            echo "::error file=$file::Missing final newline"
+            exit 1
+          }
+          if grep -nE '^(<<<<<<< |=======|>>>>>>> )' "$file"; then
+            echo "::error file=$file::Merge-conflict marker detected"
+            exit 1
+          fi
+          if grep -nE '[[:blank:]]+$' "$file"; then
+            echo "::error file=$file::Trailing whitespace detected"
+            exit 1
+          fi
+          echo "Documentation checks passed."
