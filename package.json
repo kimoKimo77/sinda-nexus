@@ -1,0 +1,9 @@
+{
+  "name": "sinda-token-preview",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Preview-only fixed-supply SINDA ERC-20 contract",
+  "scripts": { "compile": "hardhat compile", "test": "hardhat test", "clean": "hardhat clean" },
+  "devDependencies": { "@nomicfoundation/hardhat-toolbox": "5.0.0", "hardhat": "2.22.17" },
+  "dependencies": { "@openzeppelin/contracts": "5.1.0" }
+}
