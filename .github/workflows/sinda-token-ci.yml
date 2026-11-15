@@ -1,0 +1,37 @@
+name: SINDA Token Preview CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "test/**"
+      - "hardhat.config.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/sinda-token-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-checks:
+    name: Compile, test, and audit (local only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned direct dependencies
+        run: npm install --no-audit --no-fund
+      - name: Compile contracts
+        run: npm run compile
+      - name: Run contract tests
+        run: npm test
+      - name: Audit dependency tree
+        run: npm audit --audit-level=high
