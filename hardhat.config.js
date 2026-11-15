@@ -1,10 +1,19 @@
-require("@nomicfoundation/hardhat-toolbox");
+import { defineConfig } from "hardhat/config";
+import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 
-/** @type import("hardhat/config").HardhatUserConfig */
-module.exports = {
+export default defineConfig({
+  plugins: [hardhatToolboxMochaEthers],
   solidity: {
     version: "0.8.24",
-    settings: { optimizer: { enabled: true, runs: 200 } }
+    settings: {
+      optimizer: { enabled: true, runs: 200 }
+    }
   },
-  networks: { hardhat: { chainId: 31337 } }
-};
+  networks: {
+    hardhatMainnet: {
+      type: "edr-simulated",
+      chainType: "l1",
+      chainId: 31337
+    }
+  }
+});
